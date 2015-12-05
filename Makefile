@@ -3,7 +3,7 @@
 all: build
 
 build:
-	@go build ./...
+	go build ./...
 
 dbuild:
 	@docker build --rm --force-rm -t jess/onion .
@@ -19,7 +19,8 @@ drun:
 
 dtor:
 	@docker run -d \
-		-p 5353:5353 \
+		-p 9050:9050 \
 		-p 9040:9040 \
+		-p 5353:5353 \
 		--name tor-router \
-		jess/tor
+		jess/tor-router

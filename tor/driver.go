@@ -2,8 +2,13 @@ package tor
 
 import (
 	"fmt"
+	"net"
+	"sync"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/libnetwork/driverapi"
+	"github.com/docker/libnetwork/portmapper"
+	"github.com/docker/libnetwork/types"
 	"github.com/jfrazelle/onion/pkg/dknet"
 	"github.com/samalba/dockerclient"
 	"github.com/vishvananda/netlink"
@@ -25,6 +30,30 @@ type Driver struct {
 	dknet.Driver
 	dockerer
 	networks map[string]*NetworkState
+	sync.Mutex
+}
+
+// endpointConfiguration represents the user specified configuration for the sandbox endpoint
+type endpointConfiguration struct {
+	PortBindings []types.PortBinding
+	ExposedPorts []types.TransportPort
+}
+
+// containerConfiguration represents the user specified configuration for a container
+type containerConfiguration struct {
+	ParentEndpoints []string
+	ChildEndpoints  []string
+}
+
+type torEndpoint struct {
+	id              string
+	srcName         string
+	addr            *net.IPNet
+	addrv6          *net.IPNet
+	macAddress      net.HardwareAddr
+	config          *endpointConfiguration // User specified parameters
+	containerConfig *containerConfiguration
+	portMapping     []types.PortBinding // Operation port bindings
 }
 
 // NetworkState is filled in at network creation time
@@ -34,6 +63,9 @@ type NetworkState struct {
 	MTU         int
 	Gateway     string
 	GatewayMask string
+	endpoints   map[string]*torEndpoint // key: endpoint id
+	portMapper  *portmapper.PortMapper
+	sync.Mutex
 }
 
 func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
@@ -86,11 +118,120 @@ func (d *Driver) DeleteNetwork(r *dknet.DeleteNetworkRequest) error {
 
 func (d *Driver) CreateEndpoint(r *dknet.CreateEndpointRequest) error {
 	logrus.Debugf("Create endpoint request: %+v", r)
+
+	// Get the network handler and make sure it exists
+	d.Lock()
+	ns, ok := d.networks[r.NetworkID]
+	d.Unlock()
+	if !ok {
+		return types.InternalMaskableErrorf("network %s does not exist", r.NetworkID)
+	}
+
+	if ns == nil {
+		return driverapi.ErrNoNetwork(r.NetworkID)
+	}
+
+	// Check if endpoint id is good and retrieve correspondent endpoint
+	ep, err := ns.getEndpoint(r.EndpointID)
+	if err != nil {
+		return err
+	}
+
+	// Endpoint with that id exists either on desired or other sandbox
+	if ep != nil {
+		return driverapi.ErrEndpointExists(r.EndpointID)
+	}
+
+	// Try to convert the options to endpoint configuration
+	epConfig, err := parseEndpointOptions(r.Options)
+	if err != nil {
+		return err
+	}
+
+	// Create and add the endpoint
+	ns.Lock()
+	endpoint := &torEndpoint{id: r.EndpointID, config: epConfig}
+	ns.endpoints[r.EndpointID] = endpoint
+	ns.Unlock()
+
+	// On failure make sure to remove the endpoint
+	defer func() {
+		if err != nil {
+			ns.Lock()
+			delete(ns.endpoints, r.EndpointID)
+			ns.Unlock()
+		}
+	}()
+
+	endpoint.macAddress, err = net.ParseMAC(r.Interface.MacAddress)
+	if err != nil {
+		return fmt.Errorf("Parsing %s as Mac failed: %v", r.Interface.MacAddress, err)
+	}
+	_, endpoint.addr, err = net.ParseCIDR(r.Interface.Address)
+	if err != nil {
+		return fmt.Errorf("Parsing %s as CIDR failed: %v", r.Interface.Address, err)
+	}
+	_, endpoint.addrv6, err = net.ParseCIDR(r.Interface.AddressIPv6)
+	if err != nil {
+		return fmt.Errorf("Parsing %s as CIDR failed: %v", r.Interface.AddressIPv6, err)
+	}
+
+	// Program any required port mapping and store them in the endpoint
+	endpoint.portMapping, err = ns.allocatePorts(epConfig, endpoint, defaultBindingIP, false)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (d *Driver) DeleteEndpoint(r *dknet.DeleteEndpointRequest) error {
 	logrus.Debugf("Delete endpoint request: %+v", r)
+
+	// Get the network handler and make sure it exists
+	d.Lock()
+	ns, ok := d.networks[r.NetworkID]
+	d.Unlock()
+	if !ok {
+		return types.InternalMaskableErrorf("network %s does not exist", r.NetworkID)
+	}
+
+	if ns == nil {
+		return driverapi.ErrNoNetwork(r.NetworkID)
+	}
+
+	// Check if endpoint id is good and retrieve correspondent endpoint
+	ep, err := ns.getEndpoint(r.EndpointID)
+	if err != nil {
+		return err
+	}
+
+	if ep == nil {
+		return EndpointNotFoundError(r.EndpointID)
+	}
+
+	// Remove it
+	ns.Lock()
+	delete(ns.endpoints, r.EndpointID)
+	ns.Unlock()
+
+	// On failure make sure to set back ep in n.endpoints, but only
+	// if it hasn't been taken over already by some other thread.
+	defer func() {
+		if err != nil {
+			ns.Lock()
+			if _, ok := ns.endpoints[r.EndpointID]; !ok {
+				ns.endpoints[r.EndpointID] = ep
+			}
+			ns.Unlock()
+		}
+	}()
+
+	// Remove port mappings. Do not stop endpoint delete on unmap failure
+	if err := ns.releasePorts(ep); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -135,6 +276,10 @@ func (d *Driver) Join(r *dknet.JoinRequest) (*dknet.JoinResponse, error) {
 }
 
 func (d *Driver) Leave(r *dknet.LeaveRequest) error {
+	// make sure the network exists, like if the plugin stopped without cleaning up
+	if _, ok := d.networks[r.NetworkID]; !ok {
+		return fmt.Errorf("network id %s does not exist", r.NetworkID)
+	}
 	bridgeName := d.networks[r.NetworkID].BridgeName
 
 	logrus.Debugf("Leave request: %+v", r)

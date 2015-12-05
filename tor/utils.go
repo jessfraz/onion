@@ -55,7 +55,7 @@ func setInterfaceIP(name string, rawIP string) error {
 	return netlink.AddrAdd(iface, addr)
 }
 
-// todo: reconcile with what libnetwork does and port mappings
+// TODO: reconcile with what libnetwork does and port mappings
 func natOut(cidr string) error {
 	masquerade := []string{
 		"POSTROUTING", "-t", "nat",

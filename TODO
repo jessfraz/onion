@@ -1,0 +1,4 @@
+- saving state
+- endpoints iptables rules
+- cleanup iptables on shutdown
+- get the damn thing to route
