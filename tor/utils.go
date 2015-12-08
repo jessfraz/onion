@@ -8,7 +8,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/libnetwork/iptables"
-	"github.com/jfrazelle/onion/pkg/dknet"
+	"github.com/gopher-net/dknet"
 	"github.com/vishvananda/netlink"
 )
 

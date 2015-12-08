@@ -9,7 +9,7 @@ import (
 	"github.com/docker/libnetwork/driverapi"
 	"github.com/docker/libnetwork/portmapper"
 	"github.com/docker/libnetwork/types"
-	"github.com/jfrazelle/onion/pkg/dknet"
+	"github.com/gopher-net/dknet"
 	"github.com/samalba/dockerclient"
 	"github.com/vishvananda/netlink"
 )

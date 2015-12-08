@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jfrazelle/onion/pkg/dknet"
+	"github.com/gopher-net/dknet"
 	"github.com/jfrazelle/onion/tor"
 )
 
