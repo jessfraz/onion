@@ -155,7 +155,8 @@ func parseEndpointOptions(epOptions map[string]interface{}) (*endpointConfigurat
 		if bs, ok := opt.([]types.PortBinding); ok {
 			ec.PortBindings = bs
 		} else {
-			return nil, &ErrInvalidEndpointConfig{}
+			logrus.Errorf("portbinding error: %#v", epOptions)
+			//return nil, &ErrInvalidEndpointConfig{}
 		}
 	}
 
@@ -163,7 +164,8 @@ func parseEndpointOptions(epOptions map[string]interface{}) (*endpointConfigurat
 		if ports, ok := opt.([]types.TransportPort); ok {
 			ec.ExposedPorts = ports
 		} else {
-			return nil, &ErrInvalidEndpointConfig{}
+			logrus.Errorf("transport port error: %#v", epOptions)
+			//return nil, &ErrInvalidEndpointConfig{}
 		}
 	}
 

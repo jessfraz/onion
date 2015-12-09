@@ -94,6 +94,7 @@ func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
 		MTU:         mtu,
 		Gateway:     gateway,
 		GatewayMask: mask,
+		endpoints:   map[string]*torEndpoint{},
 	}
 	d.networks[r.NetworkID] = ns
 
@@ -179,10 +180,13 @@ func (d *Driver) CreateEndpoint(r *dknet.CreateEndpointRequest) error {
 		}
 	}()
 
-	endpoint.macAddress, err = net.ParseMAC(r.Interface.MacAddress)
-	if err != nil {
-		return fmt.Errorf("Parsing %s as Mac failed: %v", r.Interface.MacAddress, err)
-	}
+	itfc := *r.Interface
+	logrus.Infof("interface: %#v", itfc)
+
+	//endpoint.macAddress, err = net.ParseMAC(r.Interface.MacAddress)
+	//if err != nil {
+	//	return fmt.Errorf("Parsing %s as Mac failed: %v", r.Interface.MacAddress, err)
+	//}
 	_, endpoint.addr, err = net.ParseCIDR(r.Interface.Address)
 	if err != nil {
 		return fmt.Errorf("Parsing %s as CIDR failed: %v", r.Interface.Address, err)
