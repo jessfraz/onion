@@ -1,6 +1,8 @@
 onion
 =====
 
+[![Circle CI](https://circleci.com/gh/jfrazelle/onion.svg?style=svg)](https://circleci.com/gh/jfrazelle/onion)
+
 Tor networking plugin for docker containers
 
 ### Usage
