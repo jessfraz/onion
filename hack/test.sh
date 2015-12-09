@@ -12,4 +12,4 @@ make dtor
 
 # create the network
 docker network create -d tor darknet
-docker run --rm -it --net darknet jess/httpie -v --json http://check.torproject.org/api/ip
+docker run --rm -it --net darknet jess/httpie -v --json https://check.torproject.org/api/ip

@@ -68,7 +68,7 @@ func (d *Driver) deleteBridge(id string) error {
 
 	// Delete NAT rules for iptables
 	gatewayIP := d.networks[id].Gateway + "/" + d.networks[id].GatewayMask
-	if err = natOut(gatewayIP, false); err != nil {
+	if err = natOut(gatewayIP, true); err != nil {
 		return fmt.Errorf("Could not delete NAT rules for bridge %s: %v", bridgeName, err)
 	}
 

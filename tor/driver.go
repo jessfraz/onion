@@ -180,20 +180,23 @@ func (d *Driver) CreateEndpoint(r *dknet.CreateEndpointRequest) error {
 		}
 	}()
 
-	itfc := *r.Interface
-	logrus.Infof("interface: %#v", itfc)
-
-	//endpoint.macAddress, err = net.ParseMAC(r.Interface.MacAddress)
-	//if err != nil {
-	//	return fmt.Errorf("Parsing %s as Mac failed: %v", r.Interface.MacAddress, err)
-	//}
-	_, endpoint.addr, err = net.ParseCIDR(r.Interface.Address)
-	if err != nil {
-		return fmt.Errorf("Parsing %s as CIDR failed: %v", r.Interface.Address, err)
+	if r.Interface.MacAddress != "" {
+		endpoint.macAddress, err = net.ParseMAC(r.Interface.MacAddress)
+		if err != nil {
+			return fmt.Errorf("Parsing %s as Mac failed: %v", r.Interface.MacAddress, err)
+		}
 	}
-	_, endpoint.addrv6, err = net.ParseCIDR(r.Interface.AddressIPv6)
-	if err != nil {
-		return fmt.Errorf("Parsing %s as CIDR failed: %v", r.Interface.AddressIPv6, err)
+	if r.Interface.Address != "" {
+		_, endpoint.addr, err = net.ParseCIDR(r.Interface.Address)
+		if err != nil {
+			return fmt.Errorf("Parsing %s as CIDR failed: %v", r.Interface.Address, err)
+		}
+	}
+	if r.Interface.AddressIPv6 != "" {
+		_, endpoint.addrv6, err = net.ParseCIDR(r.Interface.AddressIPv6)
+		if err != nil {
+			return fmt.Errorf("Parsing %s as CIDR failed: %v", r.Interface.AddressIPv6, err)
+		}
 	}
 
 	// Program any required port mapping and store them in the endpoint
