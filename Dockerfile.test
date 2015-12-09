@@ -14,6 +14,12 @@ RUN apk add --update \
 	make \
 	&& rm -rf /var/cache/apk/*
 
+# install bats
+RUN cd /tmp \
+    && git clone https://github.com/sstephenson/bats.git \
+    && ./bats/install.sh /usr/local \
+	&& rm -rf /tmp/bats
+
 # Get useful and necessary Hub images so we can "docker load" locally instead of pulling
 ADD https://raw.githubusercontent.com/docker/docker/master/contrib/download-frozen-image-v2.sh /usr/local/bin/download-frozen-image-v2.sh
 RUN chmod +x /usr/local/bin/download-frozen-image-v2.sh \

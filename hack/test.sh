@@ -10,6 +10,5 @@ source "${DIR}/.onion-start"
 # run the tor router
 make dtor
 
-# create the network
-docker network create -d tor darknet
-docker run --rm -it --net darknet jess/httpie -v --json https://check.torproject.org/api/ip
+# run bats tests
+time bats --tap .

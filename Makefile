@@ -35,7 +35,7 @@ dtor:
 		jess/tor-router
 
 dtest-build:
-	docker build --rm --force-rm -t "$(DOCKER_IMAGE)" -f hack/Dockerfile .
+	docker build --rm --force-rm -t "$(DOCKER_IMAGE)" -f Dockerfile.test .
 
 dtest: dtest-build
 	$(DOCKER_RUN)
