@@ -5,6 +5,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/docker/libnetwork/iptables"
 	"github.com/vishvananda/netlink"
 )
 
@@ -45,7 +46,7 @@ func (d *Driver) initBridge(id string) error {
 	}
 
 	// Add NAT rules for iptables
-	if err = natOut(gatewayIP, false); err != nil {
+	if err = natOut(gatewayIP, iptables.Insert); err != nil {
 		return fmt.Errorf("Could not set NAT rules for bridge %s: %v", bridgeName, err)
 	}
 
@@ -68,7 +69,7 @@ func (d *Driver) deleteBridge(id string) error {
 
 	// Delete NAT rules for iptables
 	gatewayIP := d.networks[id].Gateway + "/" + d.networks[id].GatewayMask
-	if err = natOut(gatewayIP, true); err != nil {
+	if err = natOut(gatewayIP, iptables.Delete); err != nil {
 		return fmt.Errorf("Could not delete NAT rules for bridge %s: %v", bridgeName, err)
 	}
 

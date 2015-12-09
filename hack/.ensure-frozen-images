@@ -4,6 +4,7 @@ set -e
 images=(
     jess/httpie:latest
     jess/tor-router:latest
+	nginx:latest
 )
 
 if ! docker inspect "${images[@]}" &> /dev/null; then

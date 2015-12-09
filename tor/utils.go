@@ -56,20 +56,15 @@ func setInterfaceIP(name string, rawIP string) error {
 }
 
 // TODO: reconcile with what libnetwork does and port mappings
-func natOut(cidr string, delete bool) error {
+func natOut(cidr string, action iptables.Action) error {
 	masquerade := []string{
-		"POSTROUTING", "-t", "nat",
+		"POSTROUTING", "-t", string(iptables.Nat),
 		"-s", cidr,
 		"-j", "MASQUERADE",
 	}
 
-	flg := "-I"
-	if delete {
-		flg = "-D"
-	}
-
-	if _, err := iptables.Raw(append([]string{"-C"}, masquerade...)...); err != nil || delete {
-		rule := append([]string{flg}, masquerade...)
+	if _, err := iptables.Raw(append([]string{"-C"}, masquerade...)...); err != nil || (action == iptables.Delete) {
+		rule := append([]string{string(action)}, masquerade...)
 		if output, err := iptables.Raw(rule...); err != nil {
 			return err
 		} else if len(output) > 0 {
@@ -168,4 +163,42 @@ func getGatewayIP(r *dknet.CreateNetworkRequest) (string, string, error) {
 		return "", "", fmt.Errorf("Cannot split gateway IP address")
 	}
 	return parts[0], parts[1], nil
+}
+
+func (d *Driver) getTorRouterIP() (string, error) {
+	c, err := d.dockerClient.InspectContainer(defaultTorContainer)
+	if err != nil {
+		return "", fmt.Errorf("Getting tor routing container %s failed: %v", defaultTorContainer, err)
+	}
+
+	return c.NetworkSettings.IPAddress, nil
+}
+
+func forwardToTor(torIP, bridgeName string) error {
+	// route dns requests
+	args := []string{"-t", string(iptables.Nat), string(iptables.Insert), "PREROUTING",
+		"-i", bridgeName,
+		"-p", "udp",
+		"--dport", "53",
+		"-j", "DNAT",
+		"--to-destination", net.JoinHostPort(torIP, "5353")}
+	if output, err := iptables.Raw(args...); err != nil {
+		return err
+	} else if len(output) != 0 {
+		return iptables.ChainError{Chain: "PREROUTING", Output: output}
+	}
+
+	args = []string{"-t", string(iptables.Nat), string(iptables.Insert), "PREROUTING",
+		"-i", bridgeName,
+		"-p", "tcp",
+		"--syn",
+		"-j", "DNAT",
+		"--to-destination", net.JoinHostPort(torIP, "9040")}
+	if output, err := iptables.Raw(args...); err != nil {
+		return err
+	} else if len(output) != 0 {
+		return iptables.ChainError{Chain: "FORWARD", Output: output}
+	}
+
+	return nil
 }

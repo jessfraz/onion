@@ -23,14 +23,15 @@ const (
 	mtuOption        = "net.jfrazelle.tor.bridge.mtu"
 	bridgeNameOption = "net.jfrazelle.tor.bridge.name"
 
-	defaultMTU = 1500
+	defaultMTU          = 1500
+	defaultTorContainer = "tor-router"
 )
 
 // Driver represents the interface for the network plugin driver.
 type Driver struct {
 	dknet.Driver
-	dockerer
-	networks map[string]*NetworkState
+	dockerClient *dockerclient.DockerClient
+	networks     map[string]*NetworkState
 	sync.Mutex
 }
 
@@ -89,6 +90,19 @@ func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
 		return err
 	}
 
+	// we need to have ip forwarding setup for this to work w routing
+	if err = setupIPForwarding(); err != nil {
+		return err
+	}
+
+	// get tor router ip
+	torIP, err := d.getTorRouterIP()
+	if err != nil {
+		return err
+	}
+
+	logrus.Debugf("tor router ip is: %s", torIP)
+
 	ns := &NetworkState{
 		BridgeName:  bridgeName,
 		MTU:         mtu,
@@ -101,8 +115,15 @@ func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
 	logrus.Debugf("Initializing bridge for network %s", r.NetworkID)
 	if err := d.initBridge(r.NetworkID); err != nil {
 		delete(d.networks, r.NetworkID)
-		return fmt.Errorf("Init bridge %s failed: %s", bridgeName, err)
+		return fmt.Errorf("Init bridge %s failed: %v", bridgeName, err)
 	}
+
+	logrus.Debugf("Redirecting outgoing traffic on bridge (%s) to torIP (%s)", bridgeName, torIP)
+	if err := forwardToTor(torIP, bridgeName); err != nil {
+		delete(d.networks, r.NetworkID)
+		return fmt.Errorf("Redirecting traffic from bridge (%s) to torIP (%s) via iptables failed: %v", bridgeName, torIP, err)
+	}
+
 	return nil
 }
 
@@ -354,10 +375,8 @@ func NewDriver() (*Driver, error) {
 	}
 
 	d := &Driver{
-		dockerer: dockerer{
-			client: docker,
-		},
-		networks: make(map[string]*NetworkState),
+		dockerClient: docker,
+		networks:     make(map[string]*NetworkState),
 	}
 	return d, nil
 }

@@ -7,7 +7,16 @@ DOCKER_ENVS := \
 
 GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
 DOCKER_IMAGE := onion-dev$(if $(GIT_BRANCH),:$(GIT_BRANCH))
-DOCKER_RUN := docker run --rm -it --privileged $(DOCKER_ENVS) "$(DOCKER_IMAGE)"
+
+# if this session isn't interactive, then we don't want to allocate a
+# TTY, which would fail, but if it is interactive, we do want to attach
+# so that the user can send e.g. ^C through.
+INTERACTIVE := $(shell [ -t 0 ] && echo 1 || echo 0)
+ifeq ($(INTERACTIVE), 1)
+	DOCKER_FLAGS += -t
+endif
+
+DOCKER_RUN := docker run --rm -i $(DOCKER_FLAGS) --privileged $(DOCKER_ENVS) "$(DOCKER_IMAGE)"
 
 all: build
 
@@ -30,7 +39,7 @@ dtor:
 	@docker run -d \
 		-p 9050:9050 \
 		-p 9040:9040 \
-		-p 5353:5353 \
+		-p 53:5353/udp \
 		--name tor-router \
 		jess/tor-router
 
@@ -41,18 +50,18 @@ dtest: dtest-build
 	$(DOCKER_RUN)
 
 fmt:
-	@gofmt -s -l .
+	@gofmt -s -l . | grep -v vendor | tee /dev/stderr
 
 lint:
-	@golint ./...
+	@golint ./... | grep -v vendor | tee /dev/stderr
 
 shell: dtest-build
 	$(DOCKER_RUN) bash
 
 test: validate
-	@go test -v ./...
+	go test -v $(shell go list ./... | grep -v /vendor/src)
 
-validate: fmt lint vet
+validate: fmt lint
 
 vet:
-	@go vet ./...
+	go vet $(shell go list ./... | grep -v vendor)
