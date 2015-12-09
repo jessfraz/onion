@@ -4,3 +4,4 @@
 - get the damn thing to route
 - integration tests for exposed ports, etc
 - on kill, delete iptables etc cleanup
+- change bash test script to use bats
