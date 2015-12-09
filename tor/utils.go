@@ -56,17 +56,21 @@ func setInterfaceIP(name string, rawIP string) error {
 }
 
 // TODO: reconcile with what libnetwork does and port mappings
-func natOut(cidr string) error {
+func natOut(cidr string, delete bool) error {
 	masquerade := []string{
 		"POSTROUTING", "-t", "nat",
 		"-s", cidr,
 		"-j", "MASQUERADE",
 	}
-	if _, err := iptables.Raw(
-		append([]string{"-C"}, masquerade...)...,
-	); err != nil {
-		incl := append([]string{"-I"}, masquerade...)
-		if output, err := iptables.Raw(incl...); err != nil {
+
+	flg := "-I"
+	if delete {
+		flg = "-D"
+	}
+
+	if _, err := iptables.Raw(append([]string{"-C"}, masquerade...)...); err != nil || delete {
+		rule := append([]string{flg}, masquerade...)
+		if output, err := iptables.Raw(rule...); err != nil {
 			return err
 		} else if len(output) > 0 {
 			return &iptables.ChainError{
@@ -75,6 +79,7 @@ func natOut(cidr string) error {
 			}
 		}
 	}
+
 	return nil
 }
 

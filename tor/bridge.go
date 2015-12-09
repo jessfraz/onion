@@ -29,7 +29,7 @@ func (d *Driver) initBridge(id string) error {
 	la.MTU = mtu
 	br := &netlink.Bridge{la}
 	if err := netlink.LinkAdd(br); err != nil {
-		return fmt.Errorf("bridge creation: %v", err)
+		return fmt.Errorf("Bridge creation failed for bridge %s: %v", bridgeName, err)
 	}
 
 	// Set bridge IP
@@ -41,28 +41,35 @@ func (d *Driver) initBridge(id string) error {
 	// Validate that the IPAddress is there!
 	_, err = getIfaceAddr(bridgeName)
 	if err != nil {
-		return fmt.Errorf("No IP address found on bridge %s", bridgeName)
+		return fmt.Errorf("No IP address found on bridge %s: %v", bridgeName, err)
 	}
 
 	// Add NAT rules for iptables
-	if err = natOut(gatewayIP); err != nil {
-		return fmt.Errorf("Could not set NAT rules for bridge %s", bridgeName)
+	if err = natOut(gatewayIP, false); err != nil {
+		return fmt.Errorf("Could not set NAT rules for bridge %s: %v", bridgeName, err)
 	}
 
 	// Bring the bridge up
 	if err := interfaceUp(bridgeName); err != nil {
-		return fmt.Errorf("Error enabling bridge: [ %s ]", err)
+		return fmt.Errorf("Error enabling bridge for %s: %v", bridgeName, err)
 	}
 
 	return nil
 }
 
 // deleteBridge deletes the bridge
-func (d *Driver) deleteBridge(bridgeName string) error {
+func (d *Driver) deleteBridge(id string) error {
 	// get the link
+	bridgeName := d.networks[id].BridgeName
 	l, err := netlink.LinkByName(bridgeName)
 	if err != nil {
 		return fmt.Errorf("Getting link with name %s failed: %v", bridgeName, err)
+	}
+
+	// Delete NAT rules for iptables
+	gatewayIP := d.networks[id].Gateway + "/" + d.networks[id].GatewayMask
+	if err = natOut(gatewayIP, false); err != nil {
+		return fmt.Errorf("Could not delete NAT rules for bridge %s: %v", bridgeName, err)
 	}
 
 	// delete the link

@@ -26,6 +26,7 @@ const (
 	defaultMTU = 1500
 )
 
+// Driver represents the interface for the network plugin driver.
 type Driver struct {
 	dknet.Driver
 	dockerer
@@ -33,18 +34,19 @@ type Driver struct {
 	sync.Mutex
 }
 
-// endpointConfiguration represents the user specified configuration for the sandbox endpoint
+// endpointConfiguration represents the user specified configuration for the sandbox endpoint.
 type endpointConfiguration struct {
 	PortBindings []types.PortBinding
 	ExposedPorts []types.TransportPort
 }
 
-// containerConfiguration represents the user specified configuration for a container
+// containerConfiguration represents the user specified configuration for a container.
 type containerConfiguration struct {
 	ParentEndpoints []string
 	ChildEndpoints  []string
 }
 
+// torEndpoint represents an endpoint in the tor network for a container.
 type torEndpoint struct {
 	id              string
 	srcName         string
@@ -56,8 +58,8 @@ type torEndpoint struct {
 	portMapping     []types.PortBinding // Operation port bindings
 }
 
-// NetworkState is filled in at network creation time
-// it contains state that we wish to keep for each network
+// NetworkState is filled in at network creation time.
+// It contains state that we wish to keep for each network.
 type NetworkState struct {
 	BridgeName  string
 	MTU         int
@@ -68,6 +70,7 @@ type NetworkState struct {
 	sync.Mutex
 }
 
+// CreateNetwork creates a new tor network.
 func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
 	logrus.Debugf("Create network request: %+v", r)
 
@@ -96,26 +99,38 @@ func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
 
 	logrus.Debugf("Initializing bridge for network %s", r.NetworkID)
 	if err := d.initBridge(r.NetworkID); err != nil {
-		logrus.Errorf("Init bridge %s failed: %s", bridgeName, err)
 		delete(d.networks, r.NetworkID)
-		return err
+		return fmt.Errorf("Init bridge %s failed: %s", bridgeName, err)
 	}
 	return nil
 }
 
+// DeleteNetwork deletes a given tor network.
 func (d *Driver) DeleteNetwork(r *dknet.DeleteNetworkRequest) error {
 	logrus.Debugf("Delete network request: %+v", r)
-	bridgeName := d.networks[r.NetworkID].BridgeName
-	logrus.Debugf("Deleting Bridge %s", bridgeName)
-	err := d.deleteBridge(bridgeName)
+
+	// Get the network handler and make sure it exists
+	d.Lock()
+	ns, ok := d.networks[r.NetworkID]
+	d.Unlock()
+	if !ok {
+		return types.InternalMaskableErrorf("network %s does not exist", r.NetworkID)
+	}
+
+	if ns == nil {
+		return driverapi.ErrNoNetwork(r.NetworkID)
+	}
+
+	err := d.deleteBridge(r.NetworkID)
 	if err != nil {
-		logrus.Errorf("Deleting bridge %s failed: %s", bridgeName, err)
-		return err
+		return fmt.Errorf("Deleting bridge for network %s failed: %s", r.NetworkID, err)
 	}
 	delete(d.networks, r.NetworkID)
+
 	return nil
 }
 
+// CreateEndpoint creates new endpoints for a container.
 func (d *Driver) CreateEndpoint(r *dknet.CreateEndpointRequest) error {
 	logrus.Debugf("Create endpoint request: %+v", r)
 
@@ -147,6 +162,7 @@ func (d *Driver) CreateEndpoint(r *dknet.CreateEndpointRequest) error {
 	if err != nil {
 		return err
 	}
+	logrus.Infof("epConfig: %#v", epConfig)
 
 	// Create and add the endpoint
 	ns.Lock()
@@ -185,6 +201,7 @@ func (d *Driver) CreateEndpoint(r *dknet.CreateEndpointRequest) error {
 	return nil
 }
 
+// DeleteEndpoint deletes the given endpoints.
 func (d *Driver) DeleteEndpoint(r *dknet.DeleteEndpointRequest) error {
 	logrus.Debugf("Delete endpoint request: %+v", r)
 
@@ -235,31 +252,47 @@ func (d *Driver) DeleteEndpoint(r *dknet.DeleteEndpointRequest) error {
 	return nil
 }
 
+// EndpointInfo returns information about an endpoint.
 func (d *Driver) EndpointInfo(r *dknet.InfoRequest) (*dknet.InfoResponse, error) {
+	logrus.Debugf("Endpoint info request: %+v", r)
+
 	res := &dknet.InfoResponse{
 		Value: make(map[string]string),
 	}
 	return res, nil
 }
 
+// Join creates a veth pair connected to the requested network.
 func (d *Driver) Join(r *dknet.JoinRequest) (*dknet.JoinResponse, error) {
-	bridgeName := d.networks[r.NetworkID].BridgeName
+	logrus.Debugf("Join request: %+v", r)
+
+	// Get the network handler and make sure it exists
+	d.Lock()
+	ns, ok := d.networks[r.NetworkID]
+	d.Unlock()
+	if !ok {
+		return nil, types.InternalMaskableErrorf("network %s does not exist", r.NetworkID)
+	}
+
+	if ns == nil {
+		return nil, driverapi.ErrNoNetwork(r.NetworkID)
+	}
+
+	bridgeName := ns.BridgeName
 
 	// create and attach local name to the bridge
 	localVethPair, err := vethPair(truncateID(r.EndpointID), bridgeName)
 	if err != nil {
-		logrus.Errorf("getting vethpair failed: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("getting vethpair failed: %v", err)
 	}
 
 	if err := netlink.LinkAdd(localVethPair); err != nil {
-		logrus.Errorf("failed to create the veth pair named: [ %v ] error: [ %s ] ", localVethPair, err)
-		return nil, err
+		return nil, fmt.Errorf("failed to create the veth pair named: [ %v ] error: [ %s ] ", localVethPair, err)
 	}
+
 	// Bring the veth pair up
 	if err := netlink.LinkSetUp(localVethPair); err != nil {
-		logrus.Errorf("Error enabling Veth local iface: [ %v ]: %v", localVethPair, err)
-		return nil, err
+		return nil, fmt.Errorf("Error enabling Veth local iface: [ %v ]: %v", localVethPair, err)
 	}
 	logrus.Infof("Attached veth [ %s ] to bridge [ %s ]", localVethPair.Name, bridgeName)
 
@@ -275,28 +308,38 @@ func (d *Driver) Join(r *dknet.JoinRequest) (*dknet.JoinResponse, error) {
 	return res, nil
 }
 
+// Leave deletes and cleans up a veth pair in the given network.
 func (d *Driver) Leave(r *dknet.LeaveRequest) error {
-	// make sure the network exists, like if the plugin stopped without cleaning up
-	if _, ok := d.networks[r.NetworkID]; !ok {
-		return fmt.Errorf("network id %s does not exist", r.NetworkID)
-	}
-	bridgeName := d.networks[r.NetworkID].BridgeName
-
 	logrus.Debugf("Leave request: %+v", r)
+
+	// Get the network handler and make sure it exists
+	d.Lock()
+	ns, ok := d.networks[r.NetworkID]
+	d.Unlock()
+	if !ok {
+		return types.InternalMaskableErrorf("network %s does not exist", r.NetworkID)
+	}
+
+	if ns == nil {
+		return driverapi.ErrNoNetwork(r.NetworkID)
+	}
+
+	bridgeName := ns.BridgeName
+
 	localVethPair, err := vethPair(truncateID(r.EndpointID), bridgeName)
 	if err != nil {
-		logrus.Errorf("getting vethpair failed: %v", err)
-		return err
+		return fmt.Errorf("getting vethpair failed: %v", err)
 	}
 
 	if err := netlink.LinkDel(localVethPair); err != nil {
-		logrus.Errorf("unable to delete veth on leave: %s", err)
+		return fmt.Errorf("unable to delete veth on leave: %s", err)
 	}
 
 	logrus.Debugf("Leave %s:%s", r.NetworkID, r.EndpointID)
 	return nil
 }
 
+// NewDriver creates a new Driver pointer.
 func NewDriver() (*Driver, error) {
 	docker, err := dockerclient.NewDockerClient("unix:///var/run/docker.sock", nil)
 	if err != nil {
