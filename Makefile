@@ -39,7 +39,7 @@ dtor:
 	@docker run -d \
 		-p 9050:9050 \
 		-p 9040:9040 \
-		-p 53:5353/udp \
+		-p 5353:5353/udp \
 		--name tor-router \
 		jess/tor-router
 

@@ -2,6 +2,7 @@ package tor
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -144,6 +145,7 @@ func (n *NetworkState) releasePort(bnd types.PortBinding) error {
 	return n.portMapper.Unmap(host)
 }
 
+// TODO: The implementation of this bullshit with marshal and unmarshal sucks. Fix it.
 func parseEndpointOptions(epOptions map[string]interface{}) (*endpointConfiguration, error) {
 	if epOptions == nil {
 		return nil, nil
@@ -151,26 +153,24 @@ func parseEndpointOptions(epOptions map[string]interface{}) (*endpointConfigurat
 
 	ec := &endpointConfiguration{}
 
-	if opt, ok := epOptions[netlabel.ExposedPorts]; ok {
-		ports, ok := opt.([]types.TransportPort)
-		if !ok {
-			logrus.Errorf("transport port error: %#v", opt)
-			//return nil, &ErrInvalidEndpointConfig{}
-		} else {
-			logrus.Infof("we got success transport port")
+	if opts, ok := epOptions[netlabel.PortMap]; ok {
+		o, err := json.Marshal(opts)
+		if err != nil {
+			return nil, fmt.Errorf("PortMap marshal error: %v")
 		}
-		ec.ExposedPorts = ports
+		if err := json.Unmarshal(o, &ec.PortBindings); err != nil {
+			return nil, fmt.Errorf("PortMap umarshal error: %v")
+		}
 	}
 
-	if opt, ok := epOptions[netlabel.PortMap]; ok {
-		bs, ok := opt.([]types.PortBinding)
-		if !ok {
-			logrus.Errorf("portbinding error: %#v", opt)
-			//return nil, &ErrInvalidEndpointConfig{}
-		} else {
-			logrus.Infof("we got success port binding")
+	if opts, ok := epOptions[netlabel.ExposedPorts]; ok {
+		o, err := json.Marshal(opts)
+		if err != nil {
+			return nil, fmt.Errorf("ExposedPorts marshal error: %v")
 		}
-		ec.PortBindings = bs
+		if err := json.Unmarshal(o, &ec.ExposedPorts); err != nil {
+			return nil, fmt.Errorf("ExposedPorts umarshal error: %v")
+		}
 	}
 
 	return ec, nil

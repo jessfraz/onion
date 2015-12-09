@@ -109,6 +109,7 @@ func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
 		Gateway:     gateway,
 		GatewayMask: mask,
 		endpoints:   map[string]*torEndpoint{},
+		portMapper:  portmapper.New(),
 	}
 	d.networks[r.NetworkID] = ns
 

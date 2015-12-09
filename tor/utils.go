@@ -177,7 +177,6 @@ func (d *Driver) getTorRouterIP() (string, error) {
 func forwardToTor(torIP, bridgeName string) error {
 	// route dns requests
 	args := []string{"-t", string(iptables.Nat), string(iptables.Insert), "PREROUTING",
-		"-i", bridgeName,
 		"-p", "udp",
 		"--dport", "53",
 		"-j", "DNAT",
@@ -189,7 +188,6 @@ func forwardToTor(torIP, bridgeName string) error {
 	}
 
 	args = []string{"-t", string(iptables.Nat), string(iptables.Insert), "PREROUTING",
-		"-i", bridgeName,
 		"-p", "tcp",
 		"--syn",
 		"-j", "DNAT",

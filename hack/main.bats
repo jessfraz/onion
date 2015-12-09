@@ -1,41 +1,48 @@
 #!/usr/bin/env bats
 
+teardown() {
+    docker rm -vf $(docker ps -a | grep -v ID | grep -v tor-router | awk '{ print $1 }' 2> /dev/null) &>/dev/null || true
+}
+
 @test "create network" {
-    run docker network create -d tor darknet
-    [ "$status" -eq 0 ]
+    docker network create -d tor darknet
 }
 
 @test "check bridge was created" {
-    run sh -c "ip a | grep -q torbr-"
-
-    [ "$status" -eq 0 ]
+    ip a | grep -q torbr-
 }
 
 @test "check iptables gateway rule was added" {
-    run sh -c "iptables-save | grep -v docker0 | grep -v dport | grep -q MASQUERADE"
-
-    [ "$status" -eq 0 ]
+    iptables-save | grep -v docker0 | grep -v dport | grep -q MASQUERADE
 }
 
 @test "run a container in the network" {
-    run docker run --rm -it --net darknet jess/httpie -v --json https://check.torproject.org/api/ip
+    #docker run --rm -it --net darknet jess/httpie -v --json https://check.torproject.org/api/ip
+
+    #iptables-save
+
+    echo "with proxy"
+    #curl -sSL --connect-timeout 10 --max-time 10 --socks $(docker inspect --format "{{.NetworkSettings.Networks.bridge.IPAddress}}" tor-router):9050 https://check.torproject.org/api/ip
+
+    echo "without proxy"
+    curl -sSL --connect-timeout 10 --max-time 10 https://check.torproject.org/api/ip
 
     [ "$status" -eq 0 ]
-    #[[ ${lines[0]} =~ version\ [0-9]+\.[0-9]+\.[0-9]+ ]]
 }
 
 @test "run a container with a published port" {
     run docker run -d --name nginx --net darknet -p 1234:80 nginx
-    run sh -c "curl -s -o /dev/null -w '%{http_code}' http://localhost:1234"
+    run sh -c "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 10 http://localhost:1234"
 
-    curl http://localhost:1234
+    cat /var/log/onion.log
+
+    curl --connect-timeout 10 --max-time 10  http://localhost:1234
 
     [ "$output" -eq 200 ]
 }
 
 @test "delete network" {
-    run docker network rm darknet
-    [ "$status" -eq 0 ]
+    docker network rm darknet
 }
 
 @test "check bridge was deleted" {
@@ -51,10 +58,9 @@
 }
 
 @test "create network without tor-router fails" {
-    run docker rm -f tor-router
+    docker rm -f tor-router
     run docker network create -d tor darknet
 
     [ "$status" -ne 0 ]
     [[ "$output" =~ *"no such id"* ]]
 }
-
