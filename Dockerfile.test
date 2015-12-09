@@ -1,7 +1,7 @@
 FROM docker:dind
 
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
-ENV GOPATH /go
+ENV GOPATH /go:/go/src/github.com/jfrazelle/onion/vendor
 
 RUN apk add --update \
 	bash \
@@ -33,8 +33,7 @@ COPY . /go/src/github.com/jfrazelle/onion
 
 WORKDIR /go/src/github.com/jfrazelle/onion
 
-RUN go get -d -v github.com/jfrazelle/onion \
-	&& go build -o /usr/bin/onion .
+RUN go build -o /usr/bin/onion .
 
 ENTRYPOINT [ "dind" ]
 CMD [ "hack/test.sh" ]

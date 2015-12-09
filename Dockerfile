@@ -2,7 +2,7 @@ FROM alpine
 MAINTAINER Jessica Frazelle <jess@docker.com>
 
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
-ENV GOPATH /go
+ENV GOPATH /go:/go/src/github.com/jfrazelle/onion/vendor
 
 RUN	apk update && apk add \
 	ca-certificates \
@@ -22,7 +22,6 @@ RUN buildDeps=' \
 	&& apk update \
 	&& apk add $buildDeps \
 	&& cd /go/src/github.com/jfrazelle/onion \
-	&& go get -d -v github.com/jfrazelle/onion \
 	&& go build -o /usr/bin/onion . \
 	&& apk del $buildDeps \
 	&& rm -rf /var/cache/apk/* \
