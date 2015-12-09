@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+images=(
+    jess/httpie:latest
+    jess/tor-router:latest
+)
+
+if ! docker inspect "${images[@]}" &> /dev/null; then
+	hardCodedDir='/docker-frozen-images'
+	( set -x; tar -cC "$hardCodedDir" . | docker load )
+fi
