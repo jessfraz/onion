@@ -1,0 +1,42 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+export DOCKER_GRAPHDRIVER=${DOCKER_GRAPHDRIVER:-vfs}
+
+# example usage: DOCKER_STORAGE_OPTS="dm.basesize=20G,dm.loopdatasize=200G"
+storage_params=""
+if [ -n "$DOCKER_STORAGE_OPTS" ]; then
+	IFS=','
+	for i in ${DOCKER_STORAGE_OPTS}; do
+		storage_params="--storage-opt $i $storage_params"
+	done
+	unset IFS
+fi
+
+( set -x; exec \
+	docker daemon --debug \
+	--storage-driver "$DOCKER_GRAPHDRIVER" \
+	--pidfile "/var/run/docker.pid" \
+	$storage_params \
+	&> "/var/log/docker.log"
+) &
+
+# make sure that if the script exits unexpectedly, we stop this daemon we just started
+trap "source ${DIR}/.integration-daemon-stop" EXIT
+
+# give it a little time to come up so it's "ready"
+tries=60
+echo "INFO: Waiting for daemon to start..."
+while ! docker version &> /dev/null; do
+	(( tries-- ))
+	if [ $tries -le 0 ]; then
+		printf "\n"
+		echo >&2 "error: daemon failed to start"
+		echo >&2 "  check /var/log/docker.log for details"
+		false
+	fi
+	printf "."
+	sleep 2
+done
+printf "\n"

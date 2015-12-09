@@ -46,7 +46,7 @@ fmt:
 lint:
 	@golint ./...
 
-shell: test-build
+shell: dtest-build
 	$(DOCKER_RUN) bash
 
 test: validate

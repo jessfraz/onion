@@ -1,0 +1,10 @@
+#!/bin/bash
+
+( set -x; exec \
+	onion -d \
+	--pidfile "/var/run/onion.pid" \
+	&> "/var/log/onion.log"
+) &
+
+# make sure that if the script exits unexpectedly, we stop this daemon we just started
+trap "source ${DIR}/.onion-stop" EXIT

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/docker/pkg/pidfile"
 	"github.com/gopher-net/dknet"
 	"github.com/jfrazelle/onion/tor"
 )
@@ -24,11 +25,15 @@ const (
 `
 	// VERSION is the binary version.
 	VERSION = "v0.1.0"
+
+	defaultPidFile = "/var/run/onion.pid"
 )
 
 var (
 	debug   bool
 	version bool
+
+	pidFile string
 )
 
 func init() {
@@ -36,6 +41,8 @@ func init() {
 	flag.BoolVar(&version, "version", false, "print version and exit")
 	flag.BoolVar(&version, "v", false, "print version and exit (shorthand)")
 	flag.BoolVar(&debug, "d", false, "run in debug mode")
+
+	flag.StringVar(&pidFile, "pidfile", defaultPidFile, "path to use for plugin's PID file")
 
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, fmt.Sprintf(BANNER, VERSION))
@@ -56,6 +63,20 @@ func init() {
 }
 
 func main() {
+	// setup the PID file if passed
+	if pidFile != "" {
+		pf, err := pidfile.New(pidFile)
+		if err != nil {
+			logrus.Fatalf("Error starting daemon: %v", err)
+		}
+		pfile := pf
+		defer func() {
+			if err := pfile.Remove(); err != nil {
+				logrus.Error(err)
+			}
+		}()
+	}
+
 	d, err := tor.NewDriver()
 	if err != nil {
 		logrus.Fatal(err)
