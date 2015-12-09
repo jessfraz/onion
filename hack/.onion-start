@@ -8,3 +8,19 @@
 
 # make sure that if the script exits unexpectedly, we stop this daemon we just started
 trap "source ${DIR}/.onion-stop" EXIT
+
+# give it a little time to come up so it's "ready"
+tries=60
+echo "INFO: Waiting for onion to start..."
+while ! [ ! -f /var/run/docker/plugins/tor.sock ] &> /dev/null; do
+	(( tries-- ))
+	if [ $tries -le 0 ]; then
+		printf "\n"
+		echo >&2 "error: onion failed to start"
+		echo >&2 "  check /var/log/onion.log for details"
+		false
+	fi
+	printf "."
+	sleep 2
+done
+printf "\n"

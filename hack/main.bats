@@ -6,17 +6,15 @@
 }
 
 @test "check bridge was created" {
-    run ip a
+    result=$(ip a | grep torbr-)
 
-    [ "$status" -eq 0 ]
-    [ "$output" = *"torbr-"* ]
+    [ "$result" == *"torbr-"* ]
 }
 
 @test "check iptables gateway rule was added" {
-    run iptables-save | grep -v docker0
+    result=$(iptables-save | grep -v docker0 | grep -v dport)
 
-    [ "$status" -eq 0 ]
-    [ "$output" = *"MASQUERADE"* ]
+    [ "$result" = *"MASQUERADE"* ]
 }
 
 @test "run a container in the network" {
@@ -33,15 +31,13 @@
 }
 
 @test "check bridge was deleted" {
-    run ip a
+    result=$(ip a | grep torbr-)
 
-    [ "$status" -eq 0 ]
-    [ "$output" != *"torbr-"* ]
+    [ "$result" != *"torbr-"* ]
 }
 
-@test "check iptables gateway rule was added" {
-    run iptables-save | grep -v docker0
+@test "check iptables gateway rule was removed" {
+    result=$(iptables-save | grep -v docker0 | grep -v dport)
 
-    [ "$status" -eq 0 ]
-    [ "$output" != *"MASQUERADE"* ]
+    [ "$result" != *"MASQUERADE"* ]
 }

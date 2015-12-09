@@ -11,4 +11,4 @@ source "${DIR}/.onion-start"
 make dtor
 
 # run bats tests
-time bats --tap .
+time bats --tap ${DIR}
