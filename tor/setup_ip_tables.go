@@ -1,5 +1,3 @@
-// +build ignore
-
 package tor
 
 import (
@@ -11,13 +9,13 @@ import (
 	"github.com/docker/libnetwork/netutils"
 )
 
-// TorChain: TOR iptable chain name
 const (
+	// TorChain is the TOR iptable chain name.
 	TorChain    = "TOR"
 	hairpinMode = false
 )
 
-func setupIPChains(config *configuration) (*iptables.ChainInfo, *iptables.ChainInfo, error) {
+func setupIPChains() (*iptables.ChainInfo, *iptables.ChainInfo, error) {
 	natChain, err := iptables.NewChain(TorChain, iptables.Nat, hairpinMode)
 	if err != nil {
 		return nil, nil, fmt.Errorf("Failed to create NAT chain: %s", err.Error())
@@ -38,45 +36,63 @@ func setupIPChains(config *configuration) (*iptables.ChainInfo, *iptables.ChainI
 	return natChain, filterChain, nil
 }
 
-func (n *NetworkState) setupIPTables(bridgeName string) error {
-	addrv4, _, err := netutils.GetIfaceAddr(bridgeName)
+type iptablesConfig struct {
+	bridgeName  string
+	addr        *net.IPNet
+	hairpinMode bool
+	iccMode     bool
+	ipMasqMode  bool
+}
+
+func (n *NetworkState) setupIPTables() error {
+	addrv4, _, err := netutils.GetIfaceAddr(n.BridgeName)
 	if err != nil {
-		return fmt.Errorf("Failed to setup IP tables, cannot acquire interface address for bridge %s: %v", bridgeName, err)
+		return fmt.Errorf("Failed to setup IP tables, cannot acquire interface address for bridge %s: %v", n.BridgeName, err)
 	}
+
+	ic := &iptablesConfig{
+		bridgeName:  n.BridgeName,
+		hairpinMode: hairpinMode,
+		iccMode:     true,
+		ipMasqMode:  true,
+	}
+
 	ipnet := addrv4.(*net.IPNet)
-	maskedAddrv4 := &net.IPNet{
+	ic.addr = &net.IPNet{
 		IP:   ipnet.IP.Mask(ipnet.Mask),
 		Mask: ipnet.Mask,
 	}
 
-	if err = setupIPTablesInternal(bridgeName, maskedAddrv4, hairpinMode, true); err != nil {
-		return fmt.Errorf("setup iptables failed for bridge %s: %v", bridgeName, err)
+	if err = ic.setupIPTablesInternal(true); err != nil {
+		return fmt.Errorf("setup iptables failed for bridge %s: %v", n.BridgeName, err)
 	}
 	n.registerIptCleanFunc(func() error {
-		return setupIPTablesInternal(bridgeName, maskedAddrv4, hairpinMode, false)
+		return ic.setupIPTablesInternal(false)
 	})
 
-	natChain, filterChain, err := n.getDriverChains()
-	if err != nil {
-		return fmt.Errorf("Failed to setup IP tables, cannot acquire chain info %s", err.Error())
-	}
-
-	err = iptables.ProgramChain(natChain, bridgeName, hairpinMode, true)
+	err = iptables.ProgramChain(n.natChain, n.BridgeName, ic.hairpinMode, true)
 	if err != nil {
 		return fmt.Errorf("Failed to program NAT chain: %s", err.Error())
 	}
 
-	err = iptables.ProgramChain(filterChain, bridgeName, hairpinMode, true)
+	err = iptables.ProgramChain(n.filterChain, n.BridgeName, ic.hairpinMode, true)
 	if err != nil {
 		return fmt.Errorf("Failed to program FILTER chain: %s", err.Error())
 	}
 	n.registerIptCleanFunc(func() error {
-		return iptables.ProgramChain(filterChain, bridgeName, hairpinMode, false)
+		return iptables.ProgramChain(n.filterChain, n.BridgeName, ic.hairpinMode, false)
 	})
 
-	n.portMapper.SetIptablesChain(filterChain, n.getNetworkBridgeName())
+	n.portMapper.SetIptablesChain(n.filterChain, n.BridgeName)
 
 	return nil
+}
+
+type iptableCleanFunc func() error
+type iptablesCleanFuncs []iptableCleanFunc
+
+func (n *NetworkState) registerIptCleanFunc(clean iptableCleanFunc) {
+	n.iptCleanFuncs = append(n.iptCleanFuncs, clean)
 }
 
 type iptRule struct {
@@ -86,30 +102,32 @@ type iptRule struct {
 	args    []string
 }
 
-func setupIPTablesInternal(bridgeIface string, addr net.Addr, hairpin, enable bool) error {
+func (ic *iptablesConfig) setupIPTablesInternal(enable bool) error {
 
 	var (
-		address   = addr.String()
-		natRule   = iptRule{table: iptables.Nat, chain: "POSTROUTING", preArgs: []string{"-t", "nat"}, args: []string{"-s", address, "!", "-o", bridgeIface, "-j", "MASQUERADE"}}
-		hpNatRule = iptRule{table: iptables.Nat, chain: "POSTROUTING", preArgs: []string{"-t", "nat"}, args: []string{"-m", "addrtype", "--src-type", "LOCAL", "-o", bridgeIface, "-j", "MASQUERADE"}}
-		outRule   = iptRule{table: iptables.Filter, chain: "FORWARD", args: []string{"-i", bridgeIface, "!", "-o", bridgeIface, "-j", "ACCEPT"}}
-		inRule    = iptRule{table: iptables.Filter, chain: "FORWARD", args: []string{"-o", bridgeIface, "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT"}}
+		address   = ic.addr.String()
+		natRule   = iptRule{table: iptables.Nat, chain: "POSTROUTING", preArgs: []string{"-t", "nat"}, args: []string{"-s", address, "!", "-o", ic.bridgeName, "-j", "MASQUERADE"}}
+		hpNatRule = iptRule{table: iptables.Nat, chain: "POSTROUTING", preArgs: []string{"-t", "nat"}, args: []string{"-m", "addrtype", "--src-type", "LOCAL", "-o", ic.bridgeName, "-j", "MASQUERADE"}}
+		outRule   = iptRule{table: iptables.Filter, chain: "FORWARD", args: []string{"-i", ic.bridgeName, "!", "-o", ic.bridgeName, "-j", "ACCEPT"}}
+		inRule    = iptRule{table: iptables.Filter, chain: "FORWARD", args: []string{"-o", ic.bridgeName, "-m", "conntrack", "--ctstate", "RELATED,ESTABLISHED", "-j", "ACCEPT"}}
 	)
 
 	// Set NAT.
-	if err := programChainRule(natRule, "NAT", enable); err != nil {
-		return err
+	if ic.ipMasqMode {
+		if err := programChainRule(natRule, "NAT", enable); err != nil {
+			return err
+		}
 	}
 
 	// In hairpin mode, masquerade traffic from localhost
-	if hairpin {
+	if ic.hairpinMode {
 		if err := programChainRule(hpNatRule, "MASQ LOCAL HOST", enable); err != nil {
 			return err
 		}
 	}
 
 	// Set Inter Container Communication.
-	if err := setIcc(bridgeIface, true, enable); err != nil {
+	if err := setIcc(ic.bridgeName, ic.iccMode, enable); err != nil {
 		return err
 	}
 
@@ -126,30 +144,28 @@ func setupIPTablesInternal(bridgeIface string, addr net.Addr, hairpin, enable bo
 	return nil
 }
 
-func programChainRule(rule iptRule, ruleDescr string, insert bool) error {
+func programChainRule(rule iptRule, ruleDescr string, enable bool) error {
 	var (
 		prefix    []string
-		operation string
 		condition bool
 		doesExist = iptables.Exists(rule.table, rule.chain, rule.args...)
 	)
 
-	if insert {
-		condition = !doesExist
-		prefix = []string{"-I", rule.chain}
-		operation = "enable"
-	} else {
+	action := iptables.Insert
+	condition = !doesExist
+	if !enable {
+		action = iptables.Delete
 		condition = doesExist
-		prefix = []string{"-D", rule.chain}
-		operation = "disable"
 	}
+	prefix = []string{string(action), rule.chain}
+
 	if rule.preArgs != nil {
 		prefix = append(rule.preArgs, prefix...)
 	}
 
 	if condition {
 		if output, err := iptables.Raw(append(prefix, rule.args...)...); err != nil {
-			return fmt.Errorf("Unable to %s %s rule: %v", operation, ruleDescr, err)
+			return fmt.Errorf("Unable to %s %s rule: %v", action, ruleDescr, err)
 		} else if len(output) != 0 {
 			return &iptables.ChainError{Chain: rule.chain, Output: output}
 		}

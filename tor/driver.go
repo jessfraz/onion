@@ -7,6 +7,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/libnetwork/driverapi"
+	"github.com/docker/libnetwork/iptables"
 	"github.com/docker/libnetwork/portmapper"
 	"github.com/docker/libnetwork/types"
 	"github.com/gopher-net/dknet"
@@ -62,12 +63,14 @@ type torEndpoint struct {
 // NetworkState is filled in at network creation time.
 // It contains state that we wish to keep for each network.
 type NetworkState struct {
-	BridgeName  string
-	MTU         int
-	Gateway     string
-	GatewayMask string
-	endpoints   map[string]*torEndpoint // key: endpoint id
-	portMapper  *portmapper.PortMapper
+	BridgeName            string
+	MTU                   int
+	Gateway               string
+	GatewayMask           string
+	endpoints             map[string]*torEndpoint // key: endpoint id
+	portMapper            *portmapper.PortMapper
+	natChain, filterChain *iptables.ChainInfo
+	iptCleanFuncs         iptablesCleanFuncs
 	sync.Mutex
 }
 
@@ -113,17 +116,23 @@ func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
 	}
 	d.networks[r.NetworkID] = ns
 
+	// setup iptables chains
+	ns.natChain, ns.filterChain, err = setupIPChains()
+	if err != nil {
+		return fmt.Errorf("Setup iptables chains failed: %v", err)
+	}
+
 	logrus.Debugf("Initializing bridge for network %s", r.NetworkID)
-	if err := d.initBridge(r.NetworkID); err != nil {
+	if err := ns.initBridge(); err != nil {
 		delete(d.networks, r.NetworkID)
 		return fmt.Errorf("Init bridge %s failed: %v", bridgeName, err)
 	}
 
-	logrus.Debugf("Redirecting outgoing traffic on bridge (%s) to torIP (%s)", bridgeName, torIP)
-	if err := forwardToTor(torIP, bridgeName); err != nil {
-		delete(d.networks, r.NetworkID)
-		return fmt.Errorf("Redirecting traffic from bridge (%s) to torIP (%s) via iptables failed: %v", bridgeName, torIP, err)
-	}
+	//logrus.Debugf("Redirecting outgoing traffic on bridge (%s) to torIP (%s)", bridgeName, torIP)
+	//if err := forwardToTor(torIP, bridgeName); err != nil {
+	//	delete(d.networks, r.NetworkID)
+	//	return fmt.Errorf("Redirecting traffic from bridge (%s) to torIP (%s) via iptables failed: %v", bridgeName, torIP, err)
+	//}
 
 	return nil
 }
@@ -144,7 +153,7 @@ func (d *Driver) DeleteNetwork(r *dknet.DeleteNetworkRequest) error {
 		return driverapi.ErrNoNetwork(r.NetworkID)
 	}
 
-	err := d.deleteBridge(r.NetworkID)
+	err := ns.deleteBridge(r.NetworkID)
 	if err != nil {
 		return fmt.Errorf("Deleting bridge for network %s failed: %s", r.NetworkID, err)
 	}
