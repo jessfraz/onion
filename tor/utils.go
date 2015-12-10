@@ -55,29 +55,6 @@ func setInterfaceIP(name string, rawIP string) error {
 	return netlink.AddrAdd(iface, addr)
 }
 
-// TODO: reconcile with what libnetwork does and port mappings
-func natOut(cidr string, action iptables.Action) error {
-	masquerade := []string{
-		"POSTROUTING", "-t", string(iptables.Nat),
-		"-s", cidr,
-		"-j", "MASQUERADE",
-	}
-
-	if _, err := iptables.Raw(append([]string{"-C"}, masquerade...)...); err != nil || (action == iptables.Delete) {
-		rule := append([]string{string(action)}, masquerade...)
-		if output, err := iptables.Raw(rule...); err != nil {
-			return err
-		} else if len(output) > 0 {
-			return &iptables.ChainError{
-				Chain:  "POSTROUTING",
-				Output: output,
-			}
-		}
-	}
-
-	return nil
-}
-
 // Create veth pair. Peername is renamed to eth0 in the container
 func vethPair(suffix string, bridgeName string) (*netlink.Veth, error) {
 	br, err := netlink.LinkByName(bridgeName)

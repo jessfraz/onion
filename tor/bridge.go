@@ -10,9 +10,9 @@ import (
 )
 
 // initBridge creates a bridge if it does not exist
-func (ns *NetworkState) initBridge() error {
+func (n *NetworkState) initBridge() error {
 	// try to get bridge by name, if it already exists then just exit
-	bridgeName := ns.BridgeName
+	bridgeName := n.BridgeName
 	_, err := net.InterfaceByName(bridgeName)
 	if err == nil {
 		return nil
@@ -24,14 +24,14 @@ func (ns *NetworkState) initBridge() error {
 	// create *netlink.Bridge object
 	la := netlink.NewLinkAttrs()
 	la.Name = bridgeName
-	la.MTU = ns.MTU
+	la.MTU = n.MTU
 	br := &netlink.Bridge{la}
 	if err := netlink.LinkAdd(br); err != nil {
 		return fmt.Errorf("Bridge creation failed for bridge %s: %v", bridgeName, err)
 	}
 
 	// Set bridge IP
-	gatewayIP := ns.Gateway + "/" + ns.GatewayMask
+	gatewayIP := n.Gateway + "/" + n.GatewayMask
 	if err := setInterfaceIP(bridgeName, gatewayIP); err != nil {
 		return fmt.Errorf("Error assigning address: %s on bridge: %s with an error of: %v", gatewayIP, bridgeName, err)
 	}
@@ -48,7 +48,7 @@ func (ns *NetworkState) initBridge() error {
 	}
 
 	// Setup iptables
-	if err := ns.setupIPTables(); err != nil {
+	if err := n.setupIPTables(); err != nil {
 		return fmt.Errorf("Error setting up iptables for %s: %v", bridgeName, err)
 	}
 
@@ -56,8 +56,8 @@ func (ns *NetworkState) initBridge() error {
 }
 
 // deleteBridge deletes the bridge
-func (ns *NetworkState) deleteBridge(id string) error {
-	bridgeName := ns.BridgeName
+func (n *NetworkState) deleteBridge(id string) error {
+	bridgeName := n.BridgeName
 
 	// get the link
 	l, err := netlink.LinkByName(bridgeName)
@@ -71,7 +71,7 @@ func (ns *NetworkState) deleteBridge(id string) error {
 	}
 
 	// delete all relevant iptables rules
-	for _, cleanFunc := range ns.iptCleanFuncs {
+	for _, cleanFunc := range n.iptCleanFuncs {
 		if err := cleanFunc(); err != nil {
 			logrus.Warnf("Failed to clean iptables rules for bridge %s: %v", bridgeName, err)
 		}
