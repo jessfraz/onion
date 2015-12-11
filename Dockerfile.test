@@ -28,6 +28,7 @@ ADD https://raw.githubusercontent.com/docker/docker/master/contrib/download-froz
 RUN chmod +x /usr/local/bin/download-frozen-image-v2.sh \
 	&& sleep 3 \
 	&& download-frozen-image-v2.sh /docker-frozen-images \
+	jess/curl:latest@sha256:2fb32907a95824a7a45bcf09acce5256b3b7ad71f8cce05216e3e0d39e6351ac \
 	jess/httpie:latest@sha256:be198939d7104cc73a84604d9532c984205bd6f9b35f108d7f57c380d5a43adf \
 	jess/tor-router:latest@sha256:3201557e96210a609ca26cbaa573162045882cb23a202a7dca895042383b4ca7 \
 	nginx:latest@sha256:0a8bad8dfc80e38ccdd09c41d4efd2547fa9d6d58d8706431952a2ef312e2034
