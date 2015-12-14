@@ -9,6 +9,8 @@ dependencies:
 
 test:
   pre:
-    - go vet ./...
+    - go vet $(go list ./... | grep -v vendor)
     - golint ./...
     - gofmt -s -l .
+  override:
+    - go test -v $(go list ./... | grep -v /vendor/src)
