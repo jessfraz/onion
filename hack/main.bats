@@ -47,6 +47,8 @@ teardown() {
 @test "check iptables chain was removed" {
     run sh -c "iptables-save | grep -q TOR"
 
+    iptables-save
+
     [ "$status" -eq 1 ]
 }
 

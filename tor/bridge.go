@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/jfrazelle/onion/vendor/src/github.com/docker/libnetwork/iptables"
 	"github.com/vishvananda/netlink"
 )
 
@@ -75,6 +76,14 @@ func (n *NetworkState) deleteBridge(id string) error {
 		if err := cleanFunc(); err != nil {
 			logrus.Warnf("Failed to clean iptables rules for bridge %s: %v", bridgeName, err)
 		}
+	}
+
+	// delete all the iptables chains
+	if err := iptables.RemoveExistingChain(TorChain, iptables.Nat); err != nil {
+		logrus.Warnf("Failed on removing iptables NAT chain on cleanup: %v", err)
+	}
+	if err := iptables.RemoveExistingChain(TorChain, iptables.Filter); err != nil {
+		logrus.Warnf("Failed on removing iptables FILTER chain on cleanup: %v", err)
 	}
 
 	return nil

@@ -74,6 +74,9 @@ func (n *NetworkState) setupIPTables() error {
 	if err != nil {
 		return fmt.Errorf("Failed to program NAT chain: %s", err.Error())
 	}
+	n.registerIptCleanFunc(func() error {
+		return iptables.ProgramChain(n.natChain, n.BridgeName, ic.hairpinMode, false)
+	})
 
 	err = iptables.ProgramChain(n.filterChain, n.BridgeName, ic.hairpinMode, true)
 	if err != nil {
