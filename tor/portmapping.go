@@ -156,20 +156,20 @@ func parseEndpointOptions(epOptions map[string]interface{}) (*endpointConfigurat
 	if opts, ok := epOptions[netlabel.PortMap]; ok {
 		o, err := json.Marshal(opts)
 		if err != nil {
-			return nil, fmt.Errorf("PortMap marshal error: %v")
+			return nil, fmt.Errorf("PortMap marshal error: %v", err)
 		}
 		if err := json.Unmarshal(o, &ec.PortBindings); err != nil {
-			return nil, fmt.Errorf("PortMap umarshal error: %v")
+			return nil, fmt.Errorf("PortMap umarshal error: %v", err)
 		}
 	}
 
 	if opts, ok := epOptions[netlabel.ExposedPorts]; ok {
 		o, err := json.Marshal(opts)
 		if err != nil {
-			return nil, fmt.Errorf("ExposedPorts marshal error: %v")
+			return nil, fmt.Errorf("ExposedPorts marshal error: %v", err)
 		}
 		if err := json.Unmarshal(o, &ec.ExposedPorts); err != nil {
-			return nil, fmt.Errorf("ExposedPorts umarshal error: %v")
+			return nil, fmt.Errorf("ExposedPorts umarshal error: %v", err)
 		}
 	}
 
