@@ -9,6 +9,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/libnetwork/iptables"
 	"github.com/gopher-net/dknet"
+	"github.com/jfrazelle/onion/vendor/src/github.com/docker/libnetwork/netutils"
 	"github.com/vishvananda/netlink"
 )
 
@@ -152,23 +153,76 @@ func (d *Driver) getTorRouterIP() (string, error) {
 }
 
 func forwardToTor(torIP, bridgeName string) error {
+	addrv4, _, err := netutils.GetIfaceAddr(bridgeName)
+	if err != nil {
+		return fmt.Errorf("Cannot acquire interface address for bridge %s: %v", bridgeName, err)
+	}
+
+	ipnet := addrv4.(*net.IPNet)
+	addr := &net.IPNet{
+		IP:   ipnet.IP.Mask(ipnet.Mask),
+		Mask: ipnet.Mask,
+	}
+
 	// route dns requests
 	args := []string{"-t", string(iptables.Nat), string(iptables.Insert), "PREROUTING",
+		"-i", bridgeName,
+		"!", "-s", torIP,
 		"-p", "udp",
 		"--dport", "53",
 		"-j", "DNAT",
-		"--to-destination", net.JoinHostPort(torIP, "5353")}
+		"--to", net.JoinHostPort(torIP, "5353")}
+	if output, err := iptables.Raw(args...); err != nil {
+		return err
+	} else if len(output) != 0 {
+		return iptables.ChainError{Chain: "PREROUTING", Output: output}
+	}
+	args = []string{string(iptables.Insert), "FORWARD",
+		"-s", addr.String(),
+		"-d", torIP,
+		"-i", bridgeName,
+		"-o", bridgeName,
+		"-p", "udp",
+		"--dport", "5353",
+		"-j", "ACCEPT"}
+	if output, err := iptables.Raw(args...); err != nil {
+		return err
+	} else if len(output) != 0 {
+		return iptables.ChainError{Chain: "FORWARD", Output: output}
+	}
+
+	args = []string{"-t", string(iptables.Nat), string(iptables.Insert), "PREROUTING",
+		"-i", bridgeName,
+		"!", "-s", torIP,
+		"-p", "tcp",
+		"--syn",
+		"-j", "DNAT",
+		"--to", net.JoinHostPort(torIP, "9040")}
 	if output, err := iptables.Raw(args...); err != nil {
 		return err
 	} else if len(output) != 0 {
 		return iptables.ChainError{Chain: "PREROUTING", Output: output}
 	}
 
-	args = []string{"-t", string(iptables.Nat), string(iptables.Insert), "PREROUTING",
+	args = []string{"-t", string(iptables.Nat), string(iptables.Insert), "POSTROUTING",
+		"-o", bridgeName,
+		"-s", addr.String(),
+		"-d", torIP,
+		"-j", "MASQUERADE"}
+	if output, err := iptables.Raw(args...); err != nil {
+		return err
+	} else if len(output) != 0 {
+		return iptables.ChainError{Chain: "POSTROUTING", Output: output}
+	}
+
+	args = []string{string(iptables.Insert), "FORWARD",
+		"-s", addr.String(),
+		"-d", torIP,
+		"-i", bridgeName,
+		"-o", bridgeName,
 		"-p", "tcp",
-		"--syn",
-		"-j", "DNAT",
-		"--to-destination", net.JoinHostPort(torIP, "9040")}
+		"--dport", "9040",
+		"-j", "ACCEPT"}
 	if output, err := iptables.Raw(args...); err != nil {
 		return err
 	} else if len(output) != 0 {
