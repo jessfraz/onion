@@ -9,7 +9,8 @@ source "${DIR}/.onion-start"
 
 # run the tor router
 make dtor
-sleep 20
+# wait for it to be bootstrapped
+sleep 10
 
 # run bats tests
 time bats --tap ${DIR}
