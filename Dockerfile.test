@@ -30,8 +30,7 @@ RUN chmod +x /usr/local/bin/download-frozen-image-v2.sh \
 	&& download-frozen-image-v2.sh /docker-frozen-images \
 	busybox:latest@sha256:e4f93f6ed15a0cdd342f5aae387886fba0ab98af0a102da6276eaf24d6e6ade0 \
 	jess/curl:latest@sha256:2fb32907a95824a7a45bcf09acce5256b3b7ad71f8cce05216e3e0d39e6351ac \
-	jess/httpie:latest@sha256:be198939d7104cc73a84604d9532c984205bd6f9b35f108d7f57c380d5a43adf \
-	jess/tor-router:latest@sha256:3201557e96210a609ca26cbaa573162045882cb23a202a7dca895042383b4ca7 \
+	jess/tor-router:latest@sha256:128146747347a38a21b3723874a9f020c37eeddeb61b261fab82b3859b171776 \
 	nginx:latest@sha256:0a8bad8dfc80e38ccdd09c41d4efd2547fa9d6d58d8706431952a2ef312e2034
 # see also "hack/.ensure-frozen-images" (which needs to be updated any time this list is)
 

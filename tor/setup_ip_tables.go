@@ -11,8 +11,10 @@ import (
 
 const (
 	// TorChain is the TOR iptable chain name.
-	TorChain    = "TOR"
-	hairpinMode = false
+	TorChain                = "TOR"
+	hairpinMode             = false
+	torTransparentProxyPort = "22340"
+	torDNSPort              = "22353"
 )
 
 func setupIPChains() (*iptables.ChainInfo, *iptables.ChainInfo, error) {
@@ -44,7 +46,7 @@ type iptablesConfig struct {
 	ipMasqMode  bool
 }
 
-func (n *NetworkState) setupIPTables() error {
+func (n *NetworkState) setupIPTables(torIP string) error {
 	addrv4, _, err := netutils.GetIfaceAddr(n.BridgeName)
 	if err != nil {
 		return fmt.Errorf("Failed to setup IP tables, cannot acquire interface address for bridge %s: %v", n.BridgeName, err)
@@ -87,6 +89,14 @@ func (n *NetworkState) setupIPTables() error {
 	})
 
 	n.portMapper.SetIptablesChain(n.filterChain, n.BridgeName)
+
+	// forward to tor
+	if err := forwardToTor(torIP, n.BridgeName, iptables.Append); err != nil {
+		return fmt.Errorf("Redirecting traffic from bridge (%s) to torIP (%s) via iptables failed: %v", n.BridgeName, torIP, err)
+	}
+	n.registerIptCleanFunc(func() error {
+		return forwardToTor(torIP, n.BridgeName, iptables.Delete)
+	})
 
 	return nil
 }
@@ -219,6 +229,35 @@ func setIcc(bridgeIface string, iccEnable, insert bool) error {
 				iptables.Raw(append([]string{"-D", chain}, acceptArgs...)...)
 			}
 		}
+	}
+
+	return nil
+}
+
+func forwardToTor(torIP, bridgeName string, action iptables.Action) error {
+	// route dns requests
+	args := []string{"-t", string(iptables.Nat), string(action), "PREROUTING",
+		"-i", bridgeName,
+		"-p", "udp",
+		"--dport", "53",
+		"-j", "REDIRECT",
+		"--to-ports", torDNSPort}
+	if output, err := iptables.Raw(args...); err != nil {
+		return err
+	} else if len(output) != 0 {
+		return iptables.ChainError{Chain: "FORWARD", Output: output}
+	}
+
+	args = []string{"-t", string(iptables.Nat), string(action), "PREROUTING",
+		"-i", bridgeName,
+		"-p", "tcp",
+		"--syn",
+		"-j", "REDIRECT",
+		"--to-ports", torTransparentProxyPort}
+	if output, err := iptables.Raw(args...); err != nil {
+		return err
+	} else if len(output) != 0 {
+		return iptables.ChainError{Chain: "PREROUTING", Output: output}
 	}
 
 	return nil

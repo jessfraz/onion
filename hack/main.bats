@@ -18,7 +18,7 @@ teardown() {
 
 # this is just a sanity check
 @test "check socks proxy for tor-router" {
-    run sh -c "curl -sSL --socks https://localhost:9050 https://check.torproject.org/api/ip | jq --raw-output .IsTor"
+    run sh -c "curl -sSL --socks https://localhost:22350 https://check.torproject.org/api/ip | jq --raw-output .IsTor"
     #resp1=$(docker run --rm -it jess/curl curl -sSL --socks $(docker inspect --format '{{.NetworkSettings.Networks.bridge.IPAddress}}' tor-router):9050 https://check.torproject.org/api/ip | jq --raw-output .IsTor)
     resp2=$(docker run --rm -it jess/curl curl -sSL https://check.torproject.org/api/ip | jq --raw-output .IsTor)
 

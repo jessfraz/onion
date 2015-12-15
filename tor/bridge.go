@@ -11,7 +11,7 @@ import (
 )
 
 // initBridge creates a bridge if it does not exist
-func (n *NetworkState) initBridge() error {
+func (n *NetworkState) initBridge(torIP string) error {
 	// try to get bridge by name, if it already exists then just exit
 	bridgeName := n.BridgeName
 	_, err := net.InterfaceByName(bridgeName)
@@ -49,7 +49,7 @@ func (n *NetworkState) initBridge() error {
 	}
 
 	// Setup iptables
-	if err := n.setupIPTables(); err != nil {
+	if err := n.setupIPTables(torIP); err != nil {
 		return fmt.Errorf("Error setting up iptables for %s: %v", bridgeName, err)
 	}
 

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/docker/libnetwork/iptables"
 	"github.com/gopher-net/dknet"
 	"github.com/vishvananda/netlink"
 )
@@ -149,33 +148,4 @@ func (d *Driver) getTorRouterIP() (string, error) {
 	}
 
 	return c.NetworkSettings.IPAddress, nil
-}
-
-func forwardToTor(torIP, bridgeName string) error {
-	// route dns requests
-	args := []string{"-t", string(iptables.Nat), string(iptables.Append), "PREROUTING",
-		"-i", bridgeName,
-		"-p", "udp",
-		"--dport", "53",
-		"-j", "REDIRECT",
-		"--to-ports", "5353"}
-	if output, err := iptables.Raw(args...); err != nil {
-		return err
-	} else if len(output) != 0 {
-		return iptables.ChainError{Chain: "FORWARD", Output: output}
-	}
-
-	args = []string{"-t", string(iptables.Nat), string(iptables.Append), "PREROUTING",
-		"-i", bridgeName,
-		"-p", "tcp",
-		"--syn",
-		"-j", "REDIRECT",
-		"--to-ports", "9040"}
-	if output, err := iptables.Raw(args...); err != nil {
-		return err
-	} else if len(output) != 0 {
-		return iptables.ChainError{Chain: "PREROUTING", Output: output}
-	}
-
-	return nil
 }
