@@ -128,11 +128,11 @@ func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
 		return fmt.Errorf("Init bridge %s failed: %v", bridgeName, err)
 	}
 
-	//logrus.Debugf("Redirecting outgoing traffic on bridge (%s) to torIP (%s)", bridgeName, torIP)
-	//if err := forwardToTor(torIP, bridgeName); err != nil {
-	//	delete(d.networks, r.NetworkID)
-	//	return fmt.Errorf("Redirecting traffic from bridge (%s) to torIP (%s) via iptables failed: %v", bridgeName, torIP, err)
-	//}
+	logrus.Debugf("Redirecting outgoing traffic on bridge (%s) to torIP (%s)", bridgeName, torIP)
+	if err := forwardToTor(torIP, bridgeName); err != nil {
+		delete(d.networks, r.NetworkID)
+		return fmt.Errorf("Redirecting traffic from bridge (%s) to torIP (%s) via iptables failed: %v", bridgeName, torIP, err)
+	}
 
 	return nil
 }
