@@ -4,6 +4,7 @@ set -e
 images=(
 	busybox:latest
 	jess/curl:latest
+	jess/netcat:latest
 	jess/tor-router:latest
 	nginx:latest
 )

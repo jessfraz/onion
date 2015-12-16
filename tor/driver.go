@@ -71,6 +71,7 @@ type NetworkState struct {
 	portMapper            *portmapper.PortMapper
 	natChain, filterChain *iptables.ChainInfo
 	iptCleanFuncs         iptablesCleanFuncs
+	blockUDP              bool
 	sync.Mutex
 }
 
@@ -113,6 +114,7 @@ func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
 		GatewayMask: mask,
 		endpoints:   map[string]*torEndpoint{},
 		portMapper:  portmapper.New(),
+		blockUDP:    true, // TODO: this should be configurable
 	}
 	d.networks[r.NetworkID] = ns
 

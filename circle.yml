@@ -13,4 +13,4 @@ test:
     - golint ./...
     - gofmt -s -l .
   override:
-    - go test -v $(go list ./... | grep -v /vendor/src)
+    - make ci

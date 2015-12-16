@@ -40,10 +40,12 @@ func setupIPChains() (*iptables.ChainInfo, *iptables.ChainInfo, error) {
 
 type iptablesConfig struct {
 	bridgeName  string
+	torIP       string
 	addr        *net.IPNet
 	hairpinMode bool
 	iccMode     bool
 	ipMasqMode  bool
+	blockUDP    bool
 }
 
 func (n *NetworkState) setupIPTables(torIP string) error {
@@ -54,9 +56,11 @@ func (n *NetworkState) setupIPTables(torIP string) error {
 
 	ic := &iptablesConfig{
 		bridgeName:  n.BridgeName,
+		torIP:       torIP,
 		hairpinMode: hairpinMode,
 		iccMode:     true,
 		ipMasqMode:  true,
+		blockUDP:    n.blockUDP,
 	}
 
 	ipnet := addrv4.(*net.IPNet)
@@ -91,11 +95,11 @@ func (n *NetworkState) setupIPTables(torIP string) error {
 	n.portMapper.SetIptablesChain(n.filterChain, n.BridgeName)
 
 	// forward to tor
-	if err := forwardToTor(torIP, n.BridgeName, iptables.Append); err != nil {
+	if err := ic.forwardToTor(iptables.Insert); err != nil {
 		return fmt.Errorf("Redirecting traffic from bridge (%s) to torIP (%s) via iptables failed: %v", n.BridgeName, torIP, err)
 	}
 	n.registerIptCleanFunc(func() error {
-		return forwardToTor(torIP, n.BridgeName, iptables.Delete)
+		return ic.forwardToTor(iptables.Delete)
 	})
 
 	return nil
@@ -191,7 +195,7 @@ func setIcc(bridgeIface string, iccEnable, insert bool) error {
 	var (
 		table      = iptables.Filter
 		chain      = "FORWARD"
-		args       = []string{"-i", bridgeIface, "-o", bridgeIface, "-j"}
+		args       = []string{"-i", bridgeIface, "-o", bridgeIface, "-p", "tcp", "-j"}
 		acceptArgs = append(args, "ACCEPT")
 		dropArgs   = append(args, "DROP")
 	)
@@ -234,10 +238,10 @@ func setIcc(bridgeIface string, iccEnable, insert bool) error {
 	return nil
 }
 
-func forwardToTor(torIP, bridgeName string, action iptables.Action) error {
+func (ic *iptablesConfig) forwardToTor(action iptables.Action) error {
 	// route dns requests
 	args := []string{"-t", string(iptables.Nat), string(action), "PREROUTING",
-		"-i", bridgeName,
+		"-i", ic.bridgeName,
 		"-p", "udp",
 		"--dport", "53",
 		"-j", "REDIRECT",
@@ -245,11 +249,12 @@ func forwardToTor(torIP, bridgeName string, action iptables.Action) error {
 	if output, err := iptables.Raw(args...); err != nil {
 		return err
 	} else if len(output) != 0 {
-		return iptables.ChainError{Chain: "FORWARD", Output: output}
+		return iptables.ChainError{Chain: "PREROUTING", Output: output}
 	}
 
+	// route tcp requests
 	args = []string{"-t", string(iptables.Nat), string(action), "PREROUTING",
-		"-i", bridgeName,
+		"-i", ic.bridgeName,
 		"-p", "tcp",
 		"--syn",
 		"-j", "REDIRECT",
@@ -258,6 +263,36 @@ func forwardToTor(torIP, bridgeName string, action iptables.Action) error {
 		return err
 	} else if len(output) != 0 {
 		return iptables.ChainError{Chain: "PREROUTING", Output: output}
+	}
+
+	// block udp traffic
+	if ic.blockUDP {
+		args := []string{"-t", string(iptables.Filter), string(action), "FORWARD",
+			"-i", ic.bridgeName,
+			"-p", "udp",
+			"-j", "DROP"}
+		if output, err := iptables.Raw(args...); err != nil {
+			return err
+		} else if len(output) != 0 {
+			return iptables.ChainError{Chain: "FORWARD", Output: output}
+		}
+		args = []string{"-t", string(iptables.Filter), string(action), "FORWARD",
+			"-o", ic.bridgeName,
+			"-p", "udp",
+			"-j", "DROP"}
+		if output, err := iptables.Raw(args...); err != nil {
+			return err
+		} else if len(output) != 0 {
+			return iptables.ChainError{Chain: "FORWARD", Output: output}
+		}
+		args = []string{"-t", string(iptables.Filter), string(action), "TOR",
+			"-p", "udp",
+			"-j", "DROP"}
+		if output, err := iptables.Raw(args...); err != nil {
+			return err
+		} else if len(output) != 0 {
+			return iptables.ChainError{Chain: "FORWARD", Output: output}
+		}
 	}
 
 	return nil

@@ -23,6 +23,9 @@ all: build
 build:
 	go build ./...
 
+ci: dtest-build
+	$(DOCKER_RUN) make test
+
 dbuild:
 	@docker build --rm --force-rm -t jess/onion .
 
@@ -59,7 +62,7 @@ shell: dtest-build
 test: validate
 	go test -v $(shell go list ./... | grep -v /vendor/src)
 
-validate: fmt lint
+validate: fmt lint vet
 
 vet:
 	go vet $(shell go list ./... | grep -v vendor)

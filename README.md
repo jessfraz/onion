@@ -9,6 +9,9 @@ Tor networking plugin for docker containers
 
 **NOTE:** Make sure you are using Docker 1.9 or later
 
+**WARNING:** By default all outbound udp traffic in the network will be blocked
+because it will not be routed through tor.
+
 Start the tor router
 
 **NOTE:** in the future it should be easier to start any container to route and
@@ -18,6 +21,9 @@ $ docker run -d \
     --net host \
     --name tor-router \
     jess/tor-router
+
+# follow the logs to make sure it is bootstrapped successfully
+$ docker logs -f tor-router
 ```
 
 Run the plugin container
@@ -54,4 +60,4 @@ Thanks to the libnetwork guys for writing [gopher-net/dknet](https://github.com/
 - moar tests (unit and integration)
 - exposing ports in the network is a little funky
 - saving state?
-- deny all udp traffic
+- make deny all udp traffic configurable
