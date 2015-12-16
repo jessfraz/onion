@@ -9,6 +9,17 @@ Tor networking plugin for docker containers
 
 **NOTE:** Make sure you are using Docker 1.9 or later
 
+Start the tor router
+
+**NOTE:** in the future it should be easier to start any container to route and
+have the plugin be smart about finding it, but for now.... deal with it.
+```console
+$ docker run -d \
+    --net host \
+    --name tor-router \
+    jess/tor-router
+```
+
 Run the plugin container
 
 ```console
@@ -33,4 +44,14 @@ $ docker run --rm -it --net darknet jess/httpie -v --json https://check.torproje
 
 ### Thanks
 
-Thanks to the libnetwork guys for writing [gopher-net/dknet](https://github.com/github.com/gopher-net/dknet) and of course the networking itself ;)
+Thanks to the libnetwork guys for writing [gopher-net/dknet](https://github.com/github.com/gopher-net/dknet) and of course the networking itself ;) Also a lot of this code is from the bridge driver in libnetwork itself.
+
+### TODO
+
+- the tor router should be discoverable as any docker image or container name
+  etc and the ports for forwarding should be able to be found through that
+- the tor router should not have to be run as `--net host`
+- moar tests (unit and integration)
+- exposing ports in the network is a little funky
+- saving state?
+- deny all udp traffic

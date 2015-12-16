@@ -1,5 +1,0 @@
-- saving state
-- endpoints iptables rules
-- get the damn thing to route
-- integration tests for exposed ports, etc
-- on kill, delete iptables etc cleanup
