@@ -17,6 +17,7 @@ ifeq ($(INTERACTIVE), 1)
 endif
 
 DOCKER_RUN := docker run --rm -i $(DOCKER_FLAGS) --privileged $(DOCKER_ENVS) "$(DOCKER_IMAGE)"
+DOCKER_RUN_CI := docker run --rm -i $(DOCKER_FLAGS) --entrypoint make --privileged $(DOCKER_ENVS) "$(DOCKER_IMAGE)"
 
 all: build
 
@@ -24,7 +25,7 @@ build:
 	go build ./...
 
 ci: dtest-build
-	$(DOCKER_RUN) make test
+	$(DOCKER_RUN_CI) test
 
 dbuild:
 	@docker build --rm --force-rm -t jess/onion .
@@ -45,7 +46,7 @@ dtor:
 		jess/tor-router
 
 dtest-build:
-	docker build --rm --force-rm -t "$(DOCKER_IMAGE)" -f Dockerfile.test .
+	docker build --rm --force-rm -t "$(DOCKER_IMAGE)" -f $(CURDIR)/Dockerfile.test $(CURDIR)
 
 dtest: dtest-build
 	$(DOCKER_RUN)

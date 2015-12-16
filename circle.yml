@@ -10,7 +10,7 @@ dependencies:
 test:
   pre:
     - go vet $(go list ./... | grep -v vendor)
-    - golint ./...
-    - gofmt -s -l .
+    - golint ./... | grep -v vendor | tee /dev/stderr
+    - gofmt -s -l . | grep -v vendor | tee /dev/stderr
   override:
     - make ci
