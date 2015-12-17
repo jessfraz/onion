@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/jfrazelle/onion/vendor/src/github.com/docker/libnetwork/iptables"
+	"github.com/docker/libnetwork/iptables"
 	"github.com/vishvananda/netlink"
 )
 
