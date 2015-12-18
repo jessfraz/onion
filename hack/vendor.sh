@@ -13,6 +13,6 @@ clone git github.com/gopher-net/dknet cf5ced3dd308df2c4fa13c71e009729f9551e53d
 clone git github.com/opencontainers/runc v0.0.5
 clone git github.com/samalba/dockerclient 4656b1bc6cbc06b75d65983475e4809cbd53ebb5
 clone git github.com/Sirupsen/logrus v0.8.7
-clone git github.com/vishvananda/netlink edcd99c0881a4de0fdb3818af6b24f4ee6948464
+clone git github.com/vishvananda/netlink 3e530fc6dc11bcbfcb993b51d9cbc5b0279e4297
 
 clean
