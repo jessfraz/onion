@@ -3,7 +3,7 @@ machine:
     - docker
 
 dependencies:
-  post:
+  override:
     # install golint
     - go get github.com/golang/lint/golint
 
