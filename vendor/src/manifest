@@ -1,0 +1,151 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/Sirupsen/logrus",
+			"repository": "https://github.com/Sirupsen/logrus",
+			"revision": "446d1c146faa8ed3f4218f056fcd165f6bcfda81",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/docker/docker/pkg/pidfile",
+			"repository": "https://github.com/docker/docker",
+			"revision": "6ee7c94263e367cfc03c6f08af3bdcd28f70ed7a",
+			"branch": "master",
+			"path": "/pkg/pidfile"
+		},
+		{
+			"importpath": "github.com/docker/docker/pkg/proxy",
+			"repository": "https://github.com/docker/docker",
+			"revision": "6ee7c94263e367cfc03c6f08af3bdcd28f70ed7a",
+			"branch": "master",
+			"path": "/pkg/proxy"
+		},
+		{
+			"importpath": "github.com/docker/docker/pkg/reexec",
+			"repository": "https://github.com/docker/docker",
+			"revision": "6ee7c94263e367cfc03c6f08af3bdcd28f70ed7a",
+			"branch": "master",
+			"path": "/pkg/reexec"
+		},
+		{
+			"importpath": "github.com/docker/docker/pkg/sockets",
+			"repository": "https://github.com/docker/docker",
+			"revision": "6ee7c94263e367cfc03c6f08af3bdcd28f70ed7a",
+			"branch": "master",
+			"path": "/pkg/sockets"
+		},
+		{
+			"importpath": "github.com/docker/go-units",
+			"repository": "https://github.com/docker/go-units",
+			"revision": "954fed01cc617c55d838fa2230073f2cb17386c8",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/docker/libnetwork/driverapi",
+			"repository": "https://github.com/docker/libnetwork",
+			"revision": "df3f8a10796e2173732aeafa41af45f970ced9f6",
+			"branch": "master",
+			"path": "/driverapi"
+		},
+		{
+			"importpath": "github.com/docker/libnetwork/iptables",
+			"repository": "https://github.com/docker/libnetwork",
+			"revision": "df3f8a10796e2173732aeafa41af45f970ced9f6",
+			"branch": "master",
+			"path": "/iptables"
+		},
+		{
+			"importpath": "github.com/docker/libnetwork/netlabel",
+			"repository": "https://github.com/docker/libnetwork",
+			"revision": "df3f8a10796e2173732aeafa41af45f970ced9f6",
+			"branch": "master",
+			"path": "/netlabel"
+		},
+		{
+			"importpath": "github.com/docker/libnetwork/netutils",
+			"repository": "https://github.com/docker/libnetwork",
+			"revision": "df3f8a10796e2173732aeafa41af45f970ced9f6",
+			"branch": "master",
+			"path": "/netutils"
+		},
+		{
+			"importpath": "github.com/docker/libnetwork/portallocator",
+			"repository": "https://github.com/docker/libnetwork",
+			"revision": "df3f8a10796e2173732aeafa41af45f970ced9f6",
+			"branch": "master",
+			"path": "/portallocator"
+		},
+		{
+			"importpath": "github.com/docker/libnetwork/portmapper",
+			"repository": "https://github.com/docker/libnetwork",
+			"revision": "df3f8a10796e2173732aeafa41af45f970ced9f6",
+			"branch": "master",
+			"path": "/portmapper"
+		},
+		{
+			"importpath": "github.com/docker/libnetwork/types",
+			"repository": "https://github.com/docker/libnetwork",
+			"revision": "df3f8a10796e2173732aeafa41af45f970ced9f6",
+			"branch": "master",
+			"path": "/types"
+		},
+		{
+			"importpath": "github.com/godbus/dbus",
+			"repository": "https://github.com/godbus/dbus",
+			"revision": "a1b8ba5163b7f041b22761461eabd02b70d1f824",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/gopher-net/dknet",
+			"repository": "https://github.com/gopher-net/dknet",
+			"revision": "cf5ced3dd308df2c4fa13c71e009729f9551e53d",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/jfrazelle/onion/tor",
+			"repository": "https://github.com/jfrazelle/onion",
+			"revision": "1f29f2517cc0407880cd43df3bf93ddd0db28649",
+			"branch": "master",
+			"path": "/tor"
+		},
+		{
+			"importpath": "github.com/opencontainers/runc/libcontainer/user",
+			"repository": "https://github.com/opencontainers/runc",
+			"revision": "9d6ce7168a4286ad75fd3fa5d558ff42f7661ae0",
+			"branch": "master",
+			"path": "/libcontainer/user"
+		},
+		{
+			"importpath": "github.com/samalba/dockerclient",
+			"repository": "https://github.com/samalba/dockerclient",
+			"revision": "3d72fd47163999d49d48f7504e644943fe30c019",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/vishvananda/netlink",
+			"repository": "https://github.com/vishvananda/netlink",
+			"revision": "37a89b41812e36ef63105f4afe3c535c705ba386",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/vishvananda/netlink/nl",
+			"repository": "https://github.com/vishvananda/netlink",
+			"revision": "37a89b41812e36ef63105f4afe3c535c705ba386",
+			"branch": "master",
+			"path": "/nl"
+		},
+		{
+			"importpath": "gopkg.in/airbrake/gobrake.v2",
+			"repository": "https://gopkg.in/airbrake/gobrake.v2",
+			"revision": "c9d51adc624b5cc4c1bf8de730a09af4878ffe2d",
+			"branch": "master"
+		},
+		{
+			"importpath": "gopkg.in/gemnasium/logrus-airbrake-hook.v2",
+			"repository": "https://gopkg.in/gemnasium/logrus-airbrake-hook.v2",
+			"revision": "31e6fd4bd5a98d8ee7673d24bc54ec73c31810dd",
+			"branch": "master"
+		}
+	]
+}

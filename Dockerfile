@@ -2,8 +2,7 @@ FROM alpine
 MAINTAINER Jessica Frazelle <jess@docker.com>
 
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
-ENV GOPATH /go
-ENV GO15VENDOREXPERIMENT=1
+ENV GOPATH /go:/go/src/github.com/jfrazelle/onion/vendor
 
 RUN	apk update && apk add \
 	ca-certificates \

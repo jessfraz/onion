@@ -1,8 +1,7 @@
 FROM docker:dind
 
 ENV PATH /go/bin:/usr/local/go/bin:$PATH
-ENV GOPATH /go
-ENV GO15VENDOREXPERIMENT 1
+ENV GOPATH /go:/go/src/github.com/jfrazelle/onion/vendor
 
 RUN apk add --update \
 	bash \
