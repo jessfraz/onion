@@ -50,7 +50,7 @@ func setInterfaceIP(name string, rawIP string) error {
 	if err != nil {
 		return err
 	}
-	addr := &netlink.Addr{ipNet, "", 0, 0}
+	addr := &netlink.Addr{ipNet, ""}
 	return netlink.AddrAdd(iface, addr)
 }
 
