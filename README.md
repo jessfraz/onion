@@ -9,7 +9,9 @@ Tor networking plugin for docker containers
 
 **NOTE:** Make sure you are using Docker 1.9 or later
 
-**WARNING:** By default all outbound udp traffic in the network will be blocked
+### **WARNING:** Use with caution this is still under active development
+
+**WARNING:** By default all outbound udp traffic in the network should be blocked
 because it will not be routed through tor.
 
 Start the tor router
@@ -48,6 +50,20 @@ Test it out!
 $ docker run --rm -it --net darknet jess/httpie -v --json https://check.torproject.org/api/ip
 ```
 
+### Running the tests
+
+Unit tests:
+
+```
+$ make test
+```
+
+Integration tests:
+
+```
+$ make dtest
+```
+
 ### Thanks
 
 Thanks to the libnetwork guys for writing [gopher-net/dknet](https://github.com/github.com/gopher-net/dknet) and of course the networking itself ;) Also a lot of this code is from the bridge driver in libnetwork itself.
@@ -61,3 +77,5 @@ Thanks to the libnetwork guys for writing [gopher-net/dknet](https://github.com/
 - exposing ports in the network is a little funky
 - saving state?
 - make deny all udp traffic configurable
+- udp integration tests suck
+- unit tests
