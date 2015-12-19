@@ -1,7 +1,7 @@
 onion
 =====
 
-[![Circle CI](https://circleci.com/gh/jfrazelle/onion.svg?style=svg)](https://circleci.com/gh/jfrazelle/onion)
+[![Circle CI](https://circleci.com/gh/jfrazelle/onion/tree/master.svg?style=svg&circle-token=3cd16c61899efbc98d048dc3456c602ff6ee80c4)](https://circleci.com/gh/jfrazelle/onion/tree/master)
 
 Tor networking plugin for docker containers
 
@@ -41,13 +41,13 @@ $ docker run -d \
 Create a new network
 
 ```console
-$ docker network create -d tor darknet
+$ docker network create -d tor vidalia
 ```
 
 Test it out!
 
 ```console
-$ docker run --rm -it --net darknet jess/httpie -v --json https://check.torproject.org/api/ip
+$ docker run --rm -it --net vidalia jess/httpie -v --json https://check.torproject.org/api/ip
 ```
 
 ### Running the tests
@@ -66,10 +66,11 @@ $ make dtest
 
 ### Thanks
 
-Thanks to the libnetwork guys for writing [gopher-net/dknet](https://github.com/github.com/gopher-net/dknet) and of course the networking itself ;) Also a lot of this code is from the bridge driver in libnetwork itself.
+Thanks to the libnetwork team for writing [gopher-net/dknet](https://github.com/github.com/gopher-net/dknet) and of course the networking itself ;) Also a lot of this code is from the bridge driver in libnetwork itself.
 
 ### TODO
 
+- FIND A WAY TO DO THIS WITHOUT IPTABLES
 - the tor router should be discoverable as any docker image or container name
   etc and the ports for forwarding should be able to be found through that
 - the tor router should not have to be run as `--net host`

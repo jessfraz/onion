@@ -5,7 +5,7 @@ teardown() {
 }
 
 @test "create network" {
-    docker network create -d tor darknet
+    docker network create -d tor vidalia
 }
 
 @test "check bridge was created" {
@@ -28,25 +28,25 @@ teardown() {
 }
 
 @test "run a container in the network" {
-    run sh -c "docker run --rm --net darknet jess/curl curl -sSL https://check.torproject.org/api/ip | jq --raw-output .IsTor"
+    run sh -c "docker run --rm --net vidalia jess/curl curl -sSL https://check.torproject.org/api/ip | jq --raw-output .IsTor"
 
     [ "$output" = "true" ]
 }
 
 @test "run a container with a published port" {
-    docker run -d --name nginx --net darknet -p 1234:80 nginx
-    run sh -c "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 10 http://$(docker inspect --format '{{.NetworkSettings.Networks.darknet.IPAddress}}' nginx):80"
+    docker run -d --name nginx --net vidalia -p 1234:80 nginx
+    run sh -c "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 10 http://$(docker inspect --format '{{.NetworkSettings.Networks.vidalia.IPAddress}}' nginx):80"
 
     [ "$output" -eq 200 ]
 }
 
 @test "container has network access" {
-    docker run --rm --net darknet busybox nslookup google.com
-    docker run --rm --net darknet busybox nslookup apt.dockerproject.org
+    docker run --rm --net vidalia busybox nslookup google.com
+    docker run --rm --net vidalia busybox nslookup apt.dockerproject.org
 }
 
 @test "delete network" {
-    docker network rm darknet
+    docker network rm vidalia
 }
 
 @test "check bridge was deleted" {
@@ -73,7 +73,7 @@ teardown() {
 
 @test "create network without tor-router fails" {
     docker rm -f tor-router
-    run docker network create -d tor darknet
+    run docker network create -d tor vidalia
 
     [ "$status" -ne 0 ]
     [[ "$output" =~ *"no such id"* ]]
