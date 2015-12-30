@@ -6,11 +6,11 @@ import (
 	"sync"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/go-plugins-helpers/network"
 	"github.com/docker/libnetwork/driverapi"
 	"github.com/docker/libnetwork/iptables"
 	"github.com/docker/libnetwork/portmapper"
 	"github.com/docker/libnetwork/types"
-	"github.com/gopher-net/dknet"
 	"github.com/samalba/dockerclient"
 	"github.com/vishvananda/netlink"
 )
@@ -30,7 +30,7 @@ const (
 
 // Driver represents the interface for the network plugin driver.
 type Driver struct {
-	dknet.Driver
+	network.Driver
 	dockerClient *dockerclient.DockerClient
 	networks     map[string]*NetworkState
 	sync.Mutex
@@ -76,7 +76,7 @@ type NetworkState struct {
 }
 
 // CreateNetwork creates a new tor network.
-func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
+func (d *Driver) CreateNetwork(r *network.CreateNetworkRequest) error {
 	logrus.Debugf("Create network request: %+v", r)
 
 	bridgeName, err := getBridgeName(r.NetworkID, r.Options)
@@ -134,7 +134,7 @@ func (d *Driver) CreateNetwork(r *dknet.CreateNetworkRequest) error {
 }
 
 // DeleteNetwork deletes a given tor network.
-func (d *Driver) DeleteNetwork(r *dknet.DeleteNetworkRequest) error {
+func (d *Driver) DeleteNetwork(r *network.DeleteNetworkRequest) error {
 	logrus.Debugf("Delete network request: %+v", r)
 
 	// Get the network handler and make sure it exists
@@ -159,7 +159,7 @@ func (d *Driver) DeleteNetwork(r *dknet.DeleteNetworkRequest) error {
 }
 
 // CreateEndpoint creates new endpoints for a container.
-func (d *Driver) CreateEndpoint(r *dknet.CreateEndpointRequest) error {
+func (d *Driver) CreateEndpoint(r *network.CreateEndpointRequest) error {
 	logrus.Debugf("Create endpoint request: %+v", r)
 
 	// Get the network handler and make sure it exists
@@ -236,7 +236,7 @@ func (d *Driver) CreateEndpoint(r *dknet.CreateEndpointRequest) error {
 }
 
 // DeleteEndpoint deletes the given endpoints.
-func (d *Driver) DeleteEndpoint(r *dknet.DeleteEndpointRequest) error {
+func (d *Driver) DeleteEndpoint(r *network.DeleteEndpointRequest) error {
 	logrus.Debugf("Delete endpoint request: %+v", r)
 
 	// Get the network handler and make sure it exists
@@ -287,17 +287,17 @@ func (d *Driver) DeleteEndpoint(r *dknet.DeleteEndpointRequest) error {
 }
 
 // EndpointInfo returns information about an endpoint.
-func (d *Driver) EndpointInfo(r *dknet.InfoRequest) (*dknet.InfoResponse, error) {
+func (d *Driver) EndpointInfo(r *network.InfoRequest) (*network.InfoResponse, error) {
 	logrus.Debugf("Endpoint info request: %+v", r)
 
-	res := &dknet.InfoResponse{
+	res := &network.InfoResponse{
 		Value: make(map[string]string),
 	}
 	return res, nil
 }
 
 // Join creates a veth pair connected to the requested network.
-func (d *Driver) Join(r *dknet.JoinRequest) (*dknet.JoinResponse, error) {
+func (d *Driver) Join(r *network.JoinRequest) (*network.JoinResponse, error) {
 	logrus.Debugf("Join request: %+v", r)
 
 	// Get the network handler and make sure it exists
@@ -331,8 +331,8 @@ func (d *Driver) Join(r *dknet.JoinRequest) (*dknet.JoinResponse, error) {
 	logrus.Infof("Attached veth [ %s ] to bridge [ %s ]", localVethPair.Name, bridgeName)
 
 	// SrcName gets renamed to DstPrefix + ID on the container iface
-	res := &dknet.JoinResponse{
-		InterfaceName: dknet.InterfaceName{
+	res := &network.JoinResponse{
+		InterfaceName: network.InterfaceName{
 			SrcName:   localVethPair.PeerName,
 			DstPrefix: containerEthName,
 		},
@@ -343,7 +343,7 @@ func (d *Driver) Join(r *dknet.JoinRequest) (*dknet.JoinResponse, error) {
 }
 
 // Leave deletes and cleans up a veth pair in the given network.
-func (d *Driver) Leave(r *dknet.LeaveRequest) error {
+func (d *Driver) Leave(r *network.LeaveRequest) error {
 	logrus.Debugf("Leave request: %+v", r)
 
 	// Get the network handler and make sure it exists

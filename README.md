@@ -67,7 +67,7 @@ $ make dtest
 
 ### Thanks
 
-Thanks to the libnetwork team for writing [gopher-net/dknet](https://github.com/github.com/gopher-net/dknet) and of course the networking itself ;) Also a lot of this code is from the bridge driver in libnetwork itself.
+Thanks to the libnetwork team for writing [the networking go plugin](https://github.com/docker/go-plugins-helpers/tree/master/network) and of course the networking itself ;) Also a lot of this code is from the bridge driver in libnetwork itself.
 
 Also huge thanks to the Tor project for protecting the internet.
 

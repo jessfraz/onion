@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/gopher-net/dknet"
+	"github.com/docker/go-plugins-helpers/network"
 	"github.com/vishvananda/netlink"
 )
 
@@ -104,7 +104,7 @@ func getBridgeName(id string, opts map[string]interface{}) (string, error) {
 	return bridgeName, nil
 }
 
-func getGatewayIP(r *dknet.CreateNetworkRequest) (string, string, error) {
+func getGatewayIP(r *network.CreateNetworkRequest) (string, string, error) {
 	// FIXME: Dear future self, I'm sorry for leaving you with this mess, but I want to get this working ASAP
 	// This should be an array
 	// We need to handle case where we have

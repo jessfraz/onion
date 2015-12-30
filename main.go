@@ -7,7 +7,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/pidfile"
-	"github.com/gopher-net/dknet"
+	"github.com/docker/go-plugins-helpers/network"
 	"github.com/jfrazelle/onion/tor"
 )
 
@@ -81,7 +81,7 @@ func main() {
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	h := dknet.NewHandler(d)
+	h := network.NewHandler(d)
 	h.ServeUnix("root", "tor")
 }
 
