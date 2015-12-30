@@ -32,6 +32,7 @@ Run the plugin container
 
 ```console
 $ docker run -d \
+    --net host \
     --cap-add NET_ADMIN \
     --name onion \
     -v /run/docker/plugins:/run/docker/plugins \
