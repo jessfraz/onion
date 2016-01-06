@@ -6,12 +6,13 @@ import (
 	"sync"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/engine-api/client"
+	"github.com/docker/engine-api/types"
 	"github.com/docker/go-plugins-helpers/network"
 	"github.com/docker/libnetwork/driverapi"
 	"github.com/docker/libnetwork/iptables"
 	"github.com/docker/libnetwork/portmapper"
 	"github.com/docker/libnetwork/types"
-	"github.com/samalba/dockerclient"
 	"github.com/vishvananda/netlink"
 )
 
@@ -31,8 +32,8 @@ const (
 // Driver represents the interface for the network plugin driver.
 type Driver struct {
 	network.Driver
-	dockerClient *dockerclient.DockerClient
-	networks     map[string]*NetworkState
+	dcli     *client.Client
+	networks map[string]*NetworkState
 	sync.Mutex
 }
 
@@ -375,14 +376,15 @@ func (d *Driver) Leave(r *network.LeaveRequest) error {
 
 // NewDriver creates a new Driver pointer.
 func NewDriver() (*Driver, error) {
-	docker, err := dockerclient.NewDockerClient("unix:///var/run/docker.sock", nil)
+	defaultHeaders := map[string]string{"User-Agent": "engine-api-cli-1.0"}
+	dcli, err := client.NewClient("unix:///var/run/docker.sock", "v1.22", nil, defaultHeaders)
 	if err != nil {
 		return nil, fmt.Errorf("could not connect to docker: %s", err)
 	}
 
 	d := &Driver{
-		dockerClient: docker,
-		networks:     make(map[string]*NetworkState),
+		dcli:     dcli,
+		networks: make(map[string]*NetworkState),
 	}
 	return d, nil
 }

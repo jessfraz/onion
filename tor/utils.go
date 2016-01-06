@@ -142,7 +142,7 @@ func getGatewayIP(r *network.CreateNetworkRequest) (string, string, error) {
 }
 
 func (d *Driver) getTorRouterIP() (string, error) {
-	c, err := d.dockerClient.InspectContainer(defaultTorContainer)
+	c, err := d.dcli.ContainerInspect(defaultTorContainer)
 	if err != nil {
 		return "", fmt.Errorf("Getting tor routing container %s failed: %v", defaultTorContainer, err)
 	}
