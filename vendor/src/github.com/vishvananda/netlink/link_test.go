@@ -3,6 +3,7 @@ package netlink
 import (
 	"bytes"
 	"net"
+	"os"
 	"syscall"
 	"testing"
 	"time"
@@ -120,6 +121,7 @@ func testLinkAddDel(t *testing.T, link Link) {
 
 	if len(links) != num {
 		t.Fatal("Link not removed properly")
+		return
 	}
 }
 
@@ -561,6 +563,9 @@ func TestLinkAddDelVxlan(t *testing.T) {
 }
 
 func TestLinkAddDelIPVlanL2(t *testing.T) {
+	if os.Getenv("TRAVIS_BUILD_DIR") != "" {
+		t.Skipf("Kernel in travis is too old for this test")
+	}
 	tearDown := setUpNetlinkTest(t)
 	defer tearDown()
 	parent := &Dummy{LinkAttrs{Name: "foo"}}
@@ -580,6 +585,9 @@ func TestLinkAddDelIPVlanL2(t *testing.T) {
 }
 
 func TestLinkAddDelIPVlanL3(t *testing.T) {
+	if os.Getenv("TRAVIS_BUILD_DIR") != "" {
+		t.Skipf("Kernel in travis is too old for this test")
+	}
 	tearDown := setUpNetlinkTest(t)
 	defer tearDown()
 	parent := &Dummy{LinkAttrs{Name: "foo"}}
