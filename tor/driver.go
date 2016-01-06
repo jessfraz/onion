@@ -7,7 +7,6 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/engine-api/client"
-	"github.com/docker/engine-api/types"
 	"github.com/docker/go-plugins-helpers/network"
 	"github.com/docker/libnetwork/driverapi"
 	"github.com/docker/libnetwork/iptables"
