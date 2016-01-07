@@ -376,7 +376,7 @@ func (d *Driver) Leave(r *network.LeaveRequest) error {
 // NewDriver creates a new Driver pointer.
 func NewDriver() (*Driver, error) {
 	defaultHeaders := map[string]string{"User-Agent": "engine-api-cli-1.0"}
-	dcli, err := client.NewClient("unix:///var/run/docker.sock", "v1.21", nil, defaultHeaders)
+	dcli, err := client.NewClient("unix:///var/run/docker.sock", "", nil, defaultHeaders)
 	if err != nil {
 		return nil, fmt.Errorf("could not connect to docker: %s", err)
 	}
