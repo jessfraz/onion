@@ -13,4 +13,4 @@ test:
     - test -z "$(golint ./... | grep -v vendor | tee /dev/stderr)"
     - test -z "$(gofmt -s -l . | grep -v vendor | tee /dev/stderr)"
   override:
-    - make ci
+    - make dbuild
