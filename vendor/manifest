@@ -73,14 +73,14 @@
 		{
 			"importpath": "github.com/docker/go-plugins-helpers/network",
 			"repository": "https://github.com/docker/go-plugins-helpers",
-			"revision": "c9f224a041e794bd398347a837c6406313ce9511",
+			"revision": "2bf9a9acfc4fe53ef112e7776a32196ce2ea53a0",
 			"branch": "master",
 			"path": "/network"
 		},
 		{
 			"importpath": "github.com/docker/go-plugins-helpers/sdk",
 			"repository": "https://github.com/docker/go-plugins-helpers",
-			"revision": "c9f224a041e794bd398347a837c6406313ce9511",
+			"revision": "2bf9a9acfc4fe53ef112e7776a32196ce2ea53a0",
 			"branch": "master",
 			"path": "/sdk"
 		},

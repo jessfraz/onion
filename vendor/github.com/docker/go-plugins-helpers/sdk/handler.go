@@ -24,16 +24,7 @@ func NewHandler(manifest string) Handler {
 		fmt.Fprintln(w, manifest)
 	})
 
-	return Handler{mux: mux}
-}
-
-// Serve sets up the handler to serve requests on the passed in listener
-func (h Handler) Serve(l net.Listener) error {
-	server := http.Server{
-		Addr:    l.Addr().String(),
-		Handler: h.mux,
-	}
-	return server.Serve(l)
+	return Handler{mux}
 }
 
 // ServeTCP makes the handler to listen for request in a given TCP address.
@@ -55,9 +46,9 @@ func (h Handler) HandleFunc(path string, fn func(w http.ResponseWriter, r *http.
 
 func (h Handler) listenAndServe(proto, addr, group string) error {
 	var (
+		l    net.Listener
 		err  error
 		spec string
-		l    net.Listener
 	)
 
 	server := http.Server{
