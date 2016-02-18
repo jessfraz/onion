@@ -159,7 +159,7 @@ func (d *Driver) DeleteNetwork(r *network.DeleteNetworkRequest) error {
 }
 
 // CreateEndpoint creates new endpoints for a container.
-func (d *Driver) CreateEndpoint(r *network.CreateEndpointRequest) error {
+func (d *Driver) CreateEndpoint(r *network.CreateEndpointRequest) (*network.CreateEndpointResponse, error) {
 	logrus.Debugf("Create endpoint request: %+v", r)
 
 	// Get the network handler and make sure it exists
@@ -167,28 +167,28 @@ func (d *Driver) CreateEndpoint(r *network.CreateEndpointRequest) error {
 	ns, ok := d.networks[r.NetworkID]
 	d.Unlock()
 	if !ok {
-		return types.InternalMaskableErrorf("network %s does not exist", r.NetworkID)
+		return nil, types.InternalMaskableErrorf("network %s does not exist", r.NetworkID)
 	}
 
 	if ns == nil {
-		return driverapi.ErrNoNetwork(r.NetworkID)
+		return nil, driverapi.ErrNoNetwork(r.NetworkID)
 	}
 
 	// Check if endpoint id is good and retrieve correspondent endpoint
 	ep, err := ns.getEndpoint(r.EndpointID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Endpoint with that id exists either on desired or other sandbox
 	if ep != nil {
-		return driverapi.ErrEndpointExists(r.EndpointID)
+		return nil, driverapi.ErrEndpointExists(r.EndpointID)
 	}
 
 	// Try to convert the options to endpoint configuration
 	epConfig, err := parseEndpointOptions(r.Options)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	logrus.Infof("epConfig: %#v", epConfig)
 
@@ -210,29 +210,29 @@ func (d *Driver) CreateEndpoint(r *network.CreateEndpointRequest) error {
 	if r.Interface.MacAddress != "" {
 		endpoint.macAddress, err = net.ParseMAC(r.Interface.MacAddress)
 		if err != nil {
-			return fmt.Errorf("Parsing %s as Mac failed: %v", r.Interface.MacAddress, err)
+			return nil, fmt.Errorf("Parsing %s as Mac failed: %v", r.Interface.MacAddress, err)
 		}
 	}
 	if r.Interface.Address != "" {
 		_, endpoint.addr, err = net.ParseCIDR(r.Interface.Address)
 		if err != nil {
-			return fmt.Errorf("Parsing %s as CIDR failed: %v", r.Interface.Address, err)
+			return nil, fmt.Errorf("Parsing %s as CIDR failed: %v", r.Interface.Address, err)
 		}
 	}
 	if r.Interface.AddressIPv6 != "" {
 		_, endpoint.addrv6, err = net.ParseCIDR(r.Interface.AddressIPv6)
 		if err != nil {
-			return fmt.Errorf("Parsing %s as CIDR failed: %v", r.Interface.AddressIPv6, err)
+			return nil, fmt.Errorf("Parsing %s as CIDR failed: %v", r.Interface.AddressIPv6, err)
 		}
 	}
 
 	// Program any required port mapping and store them in the endpoint
 	endpoint.portMapping, err = ns.allocatePorts(epConfig, endpoint, defaultBindingIP, false)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }
 
 // DeleteEndpoint deletes the given endpoints.

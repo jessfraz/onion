@@ -1,6 +1,9 @@
 machine:
   services:
     - docker
+  environment:
+    GO15VENDOREXPERIMENT: 1
+
 
 dependencies:
   pre:

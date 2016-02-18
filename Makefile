@@ -61,7 +61,7 @@ shell: dtest-build
 	$(DOCKER_RUN) bash
 
 test: validate
-	go test -v $(shell go list ./... | grep -v /vendor/src)
+	go test -v $(shell go list ./... | grep -v vendor)
 
 validate: fmt lint vet
 
