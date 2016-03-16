@@ -3,7 +3,7 @@
 ( set -x; exec \
 	onion -d \
 	--pidfile "/var/run/onion.pid" \
-	&> "/var/log/onion.log"
+	&> "/var/log/onion/onion.log"
 ) &
 
 # make sure that if the script exits unexpectedly, we stop this daemon we just started
@@ -17,7 +17,7 @@ while ! [ ! -f /var/run/docker/plugins/tor.sock ] &> /dev/null; do
 	if [ $tries -le 0 ]; then
 		printf "\n"
 		echo >&2 "error: onion failed to start"
-		echo >&2 "  check /var/log/onion.log for details"
+		echo >&2 "  check /var/log/onion/onion.log for details"
 		false
 	fi
 	printf "."

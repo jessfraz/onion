@@ -1,9 +1,20 @@
-.PHONY: build dbuild drun dtor dtest-build dtest fmt lint shell test validate vet
+.PHONY: build clean dbuild drun dtor dtest-build dtest fmt lint shell test validate vet
 
 # env vars passed through directly to test build scripts
 DOCKER_ENVS := \
 	-e DOCKER_GRAPHDRIVER \
 	-e DOCKER_STORAGE_OPTS \
+
+# to allow `make BIND_DIR=. shell` or `make BIND_DIR= test`
+# (default to no bind mount if DOCKER_HOST is set)
+# note: BINDDIR is supported for backwards-compatibility here
+BIND_DIR := $(if $(BINDDIR),$(BINDDIR),$(if $(DOCKER_HOST),,logs))
+DOCKER_MOUNT := $(if $(BIND_DIR),-v "$(CURDIR)/$(BIND_DIR):/var/log/onion")
+
+# This allows the test suite to be able to run without worrying about the underlying fs used by the container running the daemon (e.g. aufs-on-aufs), so long as the host running the container is running a supported fs.
+# The volume will be cleaned up when the container is removed due to `--rm`.
+# Note that `BIND_DIR` will already be set to `bundles` if `DOCKER_HOST` is not set (see above BIND_DIR line), in such case this will do nothing since `DOCKER_MOUNT` will already be set.
+DOCKER_MOUNT := $(if $(DOCKER_MOUNT),$(DOCKER_MOUNT),-v "/var/log/onion")
 
 GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
 DOCKER_IMAGE := onion-dev$(if $(GIT_BRANCH),:$(GIT_BRANCH))
@@ -16,13 +27,16 @@ ifeq ($(INTERACTIVE), 1)
 	DOCKER_FLAGS += -t
 endif
 
-DOCKER_RUN := docker run --rm -i $(DOCKER_FLAGS) --privileged $(DOCKER_ENVS) "$(DOCKER_IMAGE)"
+DOCKER_RUN := docker run --rm -i $(DOCKER_FLAGS) $(DOCKER_MOUNT) --privileged $(DOCKER_ENVS) "$(DOCKER_IMAGE)"
 DOCKER_RUN_CI := docker run --rm -i $(DOCKER_FLAGS) --entrypoint make --privileged $(DOCKER_ENVS) "$(DOCKER_IMAGE)"
 
 all: build
 
 build:
 	go build ./...
+
+clean:
+	rm -rf logs
 
 ci: dtest-build
 	$(DOCKER_RUN_CI) test
@@ -45,7 +59,7 @@ dtor:
 		--name tor-router \
 		jess/tor-router
 
-dtest-build:
+dtest-build: logs
 	docker build --rm --force-rm -t "$(DOCKER_IMAGE)" -f $(CURDIR)/Dockerfile.test $(CURDIR)
 
 dtest: dtest-build
@@ -56,6 +70,9 @@ fmt:
 
 lint:
 	@golint ./... | grep -v vendor | tee /dev/stderr
+
+logs:
+	mkdir -p logs
 
 shell: dtest-build
 	$(DOCKER_RUN) bash

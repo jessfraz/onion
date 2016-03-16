@@ -3,6 +3,7 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+mkdir -p /var/log/onion
 source "${DIR}/.integration-daemon-start"
 source "${DIR}/.ensure-frozen-images"
 source "${DIR}/.onion-start"

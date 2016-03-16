@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/go-plugins-helpers/network"
 	"github.com/vishvananda/netlink"
@@ -142,7 +144,7 @@ func getGatewayIP(r *network.CreateNetworkRequest) (string, string, error) {
 }
 
 func (d *Driver) getTorRouterIP() (string, error) {
-	c, err := d.dcli.ContainerInspect(defaultTorContainer)
+	c, err := d.dcli.ContainerInspect(context.Background(), defaultTorContainer)
 	if err != nil {
 		return "", fmt.Errorf("Getting tor routing container %s failed: %v", defaultTorContainer, err)
 	}
