@@ -1,8 +1,11 @@
 .PHONY: build clean dbuild drun dtor dtest-build dtest fmt lint shell test validate vet
 
+# set the graph driver as the current graphdriver if not set
+DOCKER_GRAPHDRIVER := $(if $(DOCKER_GRAPHDRIVER),$(DOCKER_GRAPHDRIVER),$(shell docker info | grep "Storage Driver" | sed 's/.*: //'))
+
 # env vars passed through directly to test build scripts
 DOCKER_ENVS := \
-	-e DOCKER_GRAPHDRIVER \
+	-e DOCKER_GRAPHDRIVER=$(DOCKER_GRAPHDRIVER) \
 	-e DOCKER_STORAGE_OPTS \
 
 # to allow `make BIND_DIR=. shell` or `make BIND_DIR= test`
