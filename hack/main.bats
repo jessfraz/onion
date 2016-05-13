@@ -76,5 +76,5 @@ teardown() {
     run docker network create -d tor vidalia
 
     [ "$status" -ne 0 ]
-    [[ "$output" =~ *"no such id"* ]]
+    [[ "$output" =~ *"No such container"* ]]
 }

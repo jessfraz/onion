@@ -22,8 +22,7 @@ RUN cd /tmp \
 	&& rm -rf /tmp/bats
 
 # install golint
-RUN go get github.com/golang/lint/golint \
-	&& go get golang.org/x/tools/cmd/vet
+RUN go get github.com/golang/lint/golint
 
 # Get useful and necessary Hub images so we can "docker load" locally instead of pulling
 ADD https://raw.githubusercontent.com/docker/docker/master/contrib/download-frozen-image-v2.sh /usr/local/bin/download-frozen-image-v2.sh
