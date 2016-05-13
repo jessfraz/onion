@@ -1,7 +1,7 @@
 onion
 =====
 
-[![Circle CI](https://circleci.com/gh/jfrazelle/onion/tree/master.svg?style=svg&circle-token=3cd16c61899efbc98d048dc3456c602ff6ee80c4)](https://circleci.com/gh/jfrazelle/onion/tree/master)
+[![Travis CI](https://travis-ci.org/jfrazelle/onion.svg?branch=master)](https://travis-ci.org/jfrazelle/onion)
 
 Tor networking plugin for docker containers
 
