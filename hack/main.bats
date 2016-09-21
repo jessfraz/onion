@@ -18,9 +18,9 @@ teardown() {
 
 # this is just a sanity check
 @test "check socks proxy for tor-router" {
-    run sh -c "curl -sSL --socks5 https://localhost:22350 https://check.torproject.org/api/ip | jq --raw-output .IsTor"
-    #resp1=$(docker run --rm jess/curl curl -sSL --socks5 $(docker inspect --format '{{.NetworkSettings.Networks.bridge.IPAddress}}' tor-router):9050 https://check.torproject.org/api/ip | jq --raw-output .IsTor)
-    resp2=$(docker run --rm jess/curl curl -sSL https://check.torproject.org/api/ip | jq --raw-output .IsTor)
+    run sh -c "curl -sSL --socks5 localhost:22350 https://check.torproject.org/api/ip | jq --raw-output .IsTor"
+    #resp1=$(docker run --rm jess/curl -sSL --socks5 $(docker inspect --format '{{.NetworkSettings.Networks.bridge.IPAddress}}' tor-router):9050 https://check.torproject.org/api/ip | jq --raw-output .IsTor)
+    resp2=$(docker run --rm jess/curl -sSL https://check.torproject.org/api/ip | jq --raw-output .IsTor)
 
     [ "$output" = "true" ]
     #[ "$resp1" = "true" ]
@@ -28,13 +28,13 @@ teardown() {
 }
 
 @test "run a container in the network" {
-    run sh -c "docker run --rm --net vidalia jess/curl curl -sSL https://check.torproject.org/api/ip | jq --raw-output .IsTor"
+    run sh -c "docker run --rm --net vidalia jess/curl -sSL https://check.torproject.org/api/ip | jq --raw-output .IsTor"
 
     [ "$output" = "true" ]
 }
 
 @test "run a container with a published port" {
-    docker run -d --name nginx --net vidalia -p 1234:80 nginx
+    docker run -d --name nginx --net vidalia -p 1234:80 nginx:alpine
     run sh -c "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 10 http://$(docker inspect --format '{{.NetworkSettings.Networks.vidalia.IPAddress}}' nginx):80"
 
     [ "$output" -eq 200 ]

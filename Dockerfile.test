@@ -25,18 +25,6 @@ RUN cd /tmp \
 RUN go get github.com/golang/lint/golint \
 	&& go install cmd/vet
 
-# Get useful and necessary Hub images so we can "docker load" locally instead of pulling
-ADD https://raw.githubusercontent.com/docker/docker/master/contrib/download-frozen-image-v2.sh /usr/local/bin/download-frozen-image-v2.sh
-RUN chmod +x /usr/local/bin/download-frozen-image-v2.sh \
-	&& sleep 3 \
-	&& download-frozen-image-v2.sh /docker-frozen-images \
-	busybox:latest@sha256:e4f93f6ed15a0cdd342f5aae387886fba0ab98af0a102da6276eaf24d6e6ade0 \
-	jess/curl:latest@sha256:2fb32907a95824a7a45bcf09acce5256b3b7ad71f8cce05216e3e0d39e6351ac \
-	jess/netcat:latest@sha256:0420281cd699fb7c53a77eb3a769a7c7dd444cae5fb57e79b7353a3d0ca9d6f3 \
-	jess/tor-router:latest@sha256:128146747347a38a21b3723874a9f020c37eeddeb61b261fab82b3859b171776 \
-	nginx:latest@sha256:0a8bad8dfc80e38ccdd09c41d4efd2547fa9d6d58d8706431952a2ef312e2034
-# see also "hack/.ensure-frozen-images" (which needs to be updated any time this list is)
-
 COPY . /go/src/github.com/jfrazelle/onion
 
 WORKDIR /go/src/github.com/jfrazelle/onion

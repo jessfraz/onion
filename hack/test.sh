@@ -5,11 +5,13 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 mkdir -p /var/log/onion
 source "${DIR}/.integration-daemon-start"
-source "${DIR}/.ensure-frozen-images"
 source "${DIR}/.onion-start"
 
 # run the tor router
 make dtor
+docker pull busybox
+docker pull jess/curl
+docker pull nginx:alpine
 
 # give it a little time to bootstrap so it's "ready"
 tries=60
