@@ -14,7 +14,7 @@ make dtor
 # give it a little time to bootstrap so it's "ready"
 tries=60
 echo "INFO: Waiting for tor router to bootstrap..."
-while [ "$(curl -sSL --socks5 https://localhost:22350 https://check.torproject.org/api/ip 2>/dev/null | jq --raw-output .IsTor)" != "true" ]; do
+while [ "$(curl -sSL --socks5 localhost:22350 https://check.torproject.org/api/ip 2>/dev/null | jq --raw-output .IsTor)" != "true" ]; do
 	(( tries-- ))
 	if [ $tries -le 0 ]; then
 		printf "\n"
