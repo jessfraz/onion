@@ -5,7 +5,8 @@ ENV PATH /go/bin:/usr/local/go/bin:$PATH
 ENV GOPATH /go
 
 RUN	apk add --no-cache \
-	ca-certificates
+	ca-certificates \
+        iptables
 
 COPY . /go/src/github.com/jfrazelle/onion
 
