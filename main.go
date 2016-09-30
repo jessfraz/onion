@@ -8,7 +8,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/pidfile"
 	"github.com/docker/go-plugins-helpers/network"
-	"github.com/jfrazelle/onion/tor"
+	"github.com/jessfraz/onion/tor"
 )
 
 const (

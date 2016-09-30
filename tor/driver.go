@@ -21,8 +21,8 @@ const (
 	bridgePrefix     = "torbr-"
 	containerEthName = "eth"
 
-	mtuOption        = "net.jfrazelle.tor.bridge.mtu"
-	bridgeNameOption = "net.jfrazelle.tor.bridge.name"
+	mtuOption        = "net.jessfraz.tor.bridge.mtu"
+	bridgeNameOption = "net.jessfraz.tor.bridge.name"
 
 	defaultMTU          = 1500
 	defaultTorContainer = "tor-router"
