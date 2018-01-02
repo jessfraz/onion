@@ -9,7 +9,7 @@ Tor networking plugin for docker containers
 
 #### Binaries
 
-- **linux** [386](https://github.com/jessfraz/onion/releases/download/v0.0.0/onion-linux-386) / [amd64](https://github.com/jessfraz/onion/releases/download/v0.0.0/onion-linux-amd64) / [arm](https://github.com/jessfraz/onion/releases/download/v0.0.0/onion-linux-arm) / [arm64](https://github.com/jessfraz/onion/releases/download/v0.0.0/onion-linux-arm64)
+- **linux** [386](https://github.com/jessfraz/onion/releases/download/v0.1.0/onion-linux-386) / [amd64](https://github.com/jessfraz/onion/releases/download/v0.1.0/onion-linux-amd64) / [arm](https://github.com/jessfraz/onion/releases/download/v0.1.0/onion-linux-arm) / [arm64](https://github.com/jessfraz/onion/releases/download/v0.1.0/onion-linux-arm64)
 
 #### Via Go
 
