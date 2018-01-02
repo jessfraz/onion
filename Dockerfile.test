@@ -1,4 +1,4 @@
-FROM docker:dind
+FROM docker:1.12-dind
 
 ENV PATH /go/bin:$PATH
 ENV GOPATH /go
@@ -14,6 +14,7 @@ RUN apk add --update \
 	libc-dev \
 	libgcc \
 	make \
+	--repository https://dl-3.alpinelinux.org/alpine/edge/community/ \
 	&& rm -rf /var/cache/apk/*
 
 # install bats

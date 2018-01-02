@@ -6,7 +6,7 @@ ENV GOPATH /go
 
 RUN	apk add --no-cache \
 	ca-certificates \
-        iptables
+	iptables
 
 COPY . /go/src/github.com/jessfraz/onion
 

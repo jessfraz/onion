@@ -374,6 +374,16 @@ func (d *Driver) Leave(r *network.LeaveRequest) error {
 	return nil
 }
 
+// ProgramExternalConnectivity is a noop.
+func (d *Driver) ProgramExternalConnectivity(r *network.ProgramExternalConnectivityRequest) error {
+	return nil
+}
+
+// RevokeExternalConnectivity is a noop.
+func (d *Driver) RevokeExternalConnectivity(r *network.RevokeExternalConnectivityRequest) error {
+	return nil
+}
+
 // NewDriver creates a new Driver pointer.
 func NewDriver() (*Driver, error) {
 	defaultHeaders := map[string]string{"User-Agent": "engine-api-cli-1.0"}

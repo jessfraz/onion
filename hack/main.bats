@@ -30,6 +30,7 @@ teardown() {
 @test "run a container in the network" {
     run sh -c "docker run --rm --net vidalia jess/curl -sSL https://check.torproject.org/api/ip | jq --raw-output .IsTor"
 
+    echo "output = ${output}"
     [ "$output" = "true" ]
 }
 
@@ -41,8 +42,11 @@ teardown() {
 }
 
 @test "container has network access" {
+    docker run --rm --net vidalia --privileged busybox ping -w 10 231.118.211.130
     docker run --rm --net vidalia busybox nslookup google.com
     docker run --rm --net vidalia busybox nslookup apt.dockerproject.org
+
+    echo "output = ${output}"
 }
 
 @test "delete network" {
