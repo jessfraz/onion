@@ -29,16 +29,7 @@
       secure: "hP8xzjQ5mPUHks4o6Tn1YrBdRSIDtpFPBWPEdQ+jgpcARrAWCsib6oX41jvilNjsD9Vsk0Yyy7WZTbRY7p/sWgkUsO9OcLzHPx2DM2+rYtOBsvOBJghoJcJLadT9fEI3K24CgUL/wOU6jglVajgW0yYoh3ABneppVxD57AyOGzjpWQnqlXumnwxjBogmyFInMIlxf+qjdo358encedg/7nWoG1T2N8vI5l2jIN/2FUjr5Oi55jg+amFxlDNSObZ3yIMTlNGTAmDSZUpAbqjG25usu0+He8eoQN/rl0P3eU0H4ltKehCxr5/THB+WLnfcyx6tgtdnnplQiqvaYMivaQFjDT7I3HgLsihMzEeLffae+3u1IkJ/U35suWEHABohRJ59An1XzUaat4JJz/0k/BERKhTkGgmjdZkyzm9aey8zig+TJH4VPFnV0XBOCRyUfELuWisMYOkJbuTgHAkfuY3bUvFuVMkVo4P9ruVjgOcsD9do2TjISipN4u4YKS5BrW7/S36qVyUS67VhaLDqz8NJhSoJe9lAmqDux8L7xgbaRAP+uxiZsMdOhtd433R/wlkaiIM5D1IuUL5BH6vpO28JOk/3czzLdvIUcZz1vM1SzU8XftRDttd5LUA6GWHOHUWiWRVR0ZrCBQmbnhEoVMvA500fuNuN4q+HEc5FfjY="
     file:
       - cross/onion-linux-amd64.md5
-      - cross/onion-linux-arm
-      - cross/onion-linux-arm64.sha256
-      - cross/onion-linux-arm.sha256
-      - cross/onion-linux-386.sha256
-      - cross/onion-linux-arm64.md5
-      - cross/onion-linux-arm64
       - cross/onion-linux-amd64.sha256
-      - cross/onion-linux-386.md5
-      - cross/onion-linux-arm.md5
-      - cross/onion-linux-386
       - cross/onion-linux-amd64
     skip_cleanup: true
     on:
