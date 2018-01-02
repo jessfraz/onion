@@ -6,6 +6,7 @@ ENV GO15VENDOREXPERIMENT 1
 
 RUN apk add --update \
 	bash \
+	curl \
 	go \
 	git \
 	gcc \

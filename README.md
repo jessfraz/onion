@@ -5,7 +5,19 @@ onion
 
 Tor networking plugin for docker containers
 
-### Usage
+## Installation
+
+#### Binaries
+
+- **linux** [386](https://github.com/jessfraz/onion/releases/download/v0.0.0/onion-linux-386) / [amd64](https://github.com/jessfraz/onion/releases/download/v0.0.0/onion-linux-amd64) / [arm](https://github.com/jessfraz/onion/releases/download/v0.0.0/onion-linux-arm) / [arm64](https://github.com/jessfraz/onion/releases/download/v0.0.0/onion-linux-arm64)
+
+#### Via Go
+
+```bash
+$ go get github.com/jessfraz/onion
+```
+
+## Usage
 
 **NOTE:** Make sure you are using Docker 1.9 or later
 
@@ -18,6 +30,7 @@ Start the tor router
 
 **NOTE:** in the future it should be easier to start any container to route and
 have the plugin be smart about finding it, but for now.... deal with it.
+
 ```console
 $ docker run -d \
     --net host \
@@ -52,7 +65,7 @@ Test it out!
 $ docker run --rm -it --net vidalia jess/httpie -v --json https://check.torproject.org/api/ip
 ```
 
-### Running the tests
+## Running the tests
 
 Unit tests:
 
@@ -66,13 +79,13 @@ Integration tests:
 $ make dtest
 ```
 
-### Thanks
+## Thanks
 
 Thanks to the libnetwork team for writing [the networking go plugin](https://github.com/docker/go-plugins-helpers/tree/master/network) and of course the networking itself ;) Also a lot of this code is from the bridge driver in libnetwork itself.
 
 Also huge thanks to the Tor project for protecting the internet.
 
-### TODO
+## TODO
 
 - FIND A WAY TO DO THIS WITHOUT IPTABLES
 - the tor router should be discoverable as any docker image or container name

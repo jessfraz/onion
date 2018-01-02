@@ -15,7 +15,7 @@ if [ -n "$DOCKER_STORAGE_OPTS" ]; then
 fi
 
 ( set -x; exec \
-	docker daemon --debug \
+	dockerd --debug \
 	--storage-driver "$DOCKER_GRAPHDRIVER" \
 	--pidfile "/var/run/docker.pid" \
 	$storage_params \
