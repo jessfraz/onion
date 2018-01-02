@@ -3,6 +3,7 @@ package driverapi
 import (
 	"net"
 
+	"github.com/docker/docker/pkg/plugingetter"
 	"github.com/docker/libnetwork/discoverapi"
 )
 
@@ -13,10 +14,25 @@ const NetworkPluginEndpointType = "NetworkDriver"
 type Driver interface {
 	discoverapi.Discover
 
-	// CreateNetwork invokes the driver method to create a network passing
-	// the network id and network specific config. The config mechanism will
-	// eventually be replaced with labels which are yet to be introduced.
-	CreateNetwork(nid string, options map[string]interface{}, ipV4Data, ipV6Data []IPAMData) error
+	// NetworkAllocate invokes the driver method to allocate network
+	// specific resources passing network id and network specific config.
+	// It returns a key,value pair of network specific driver allocations
+	// to the caller.
+	NetworkAllocate(nid string, options map[string]string, ipV4Data, ipV6Data []IPAMData) (map[string]string, error)
+
+	// NetworkFree invokes the driver method to free network specific resources
+	// associated with a given network id.
+	NetworkFree(nid string) error
+
+	// CreateNetwork invokes the driver method to create a network
+	// passing the network id and network specific config. The
+	// config mechanism will eventually be replaced with labels
+	// which are yet to be introduced. The driver can return a
+	// list of table names for which it is interested in receiving
+	// notification when a CRUD operation is performed on any
+	// entry in that table. This will be ignored for local scope
+	// drivers.
+	CreateNetwork(nid string, options map[string]interface{}, nInfo NetworkInfo, ipV4Data, ipV6Data []IPAMData) error
 
 	// DeleteNetwork invokes the driver method to delete network passing
 	// the network id.
@@ -46,12 +62,39 @@ type Driver interface {
 	// programming to allow the external connectivity dictated by the passed options
 	ProgramExternalConnectivity(nid, eid string, options map[string]interface{}) error
 
-	// RevokeExternalConnectivity aks the driver to remove any external connectivity
+	// RevokeExternalConnectivity asks the driver to remove any external connectivity
 	// programming that was done so far
 	RevokeExternalConnectivity(nid, eid string) error
 
-	// Type returns the the type of this driver, the network type this driver manages
+	// EventNotify notifies the driver when a CRUD operation has
+	// happened on a table of its interest as soon as this node
+	// receives such an event in the gossip layer. This method is
+	// only invoked for the global scope driver.
+	EventNotify(event EventType, nid string, tableName string, key string, value []byte)
+
+	// DecodeTableEntry passes the driver a key, value pair from table it registered
+	// with libnetwork. Driver should return {object ID, map[string]string} tuple.
+	// If DecodeTableEntry is called for a table associated with NetworkObject or
+	// EndpointObject the return object ID should be the network id or endppoint id
+	// associated with that entry. map should have information about the object that
+	// can be presented to the user.
+	// For exampe: overlay driver returns the VTEP IP of the host that has the endpoint
+	// which is shown in 'network inspect --verbose'
+	DecodeTableEntry(tablename string, key string, value []byte) (string, map[string]string)
+
+	// Type returns the type of this driver, the network type this driver manages
 	Type() string
+
+	// IsBuiltIn returns true if it is a built-in driver
+	IsBuiltIn() bool
+}
+
+// NetworkInfo provides a go interface for drivers to provide network
+// specific information to libnetwork.
+type NetworkInfo interface {
+	// TableEventRegister registers driver interest in a given
+	// table name.
+	TableEventRegister(tableName string, objType ObjectType) error
 }
 
 // InterfaceInfo provides a go interface for drivers to retrive
@@ -86,7 +129,7 @@ type InterfaceNameInfo interface {
 // JoinInfo represents a set of resources that the driver has the ability to provide during
 // join time.
 type JoinInfo interface {
-	// InterfaceName returns a InterfaceNameInfo go interface to facilitate
+	// InterfaceName returns an InterfaceNameInfo go interface to facilitate
 	// setting the names for the interface.
 	InterfaceName() InterfaceNameInfo
 
@@ -102,17 +145,24 @@ type JoinInfo interface {
 
 	// DisableGatewayService tells libnetwork not to provide Default GW for the container
 	DisableGatewayService()
+
+	// AddTableEntry adds a table entry to the gossip layer
+	// passing the table name, key and an opaque value.
+	AddTableEntry(tableName string, key string, value []byte) error
 }
 
 // DriverCallback provides a Callback interface for Drivers into LibNetwork
 type DriverCallback interface {
+	// GetPluginGetter returns the pluginv2 getter.
+	GetPluginGetter() plugingetter.PluginGetter
 	// RegisterDriver provides a way for Remote drivers to dynamically register new NetworkType and associate with a driver instance
 	RegisterDriver(name string, driver Driver, capability Capability) error
 }
 
 // Capability represents the high level capabilities of the drivers which libnetwork can make use of
 type Capability struct {
-	DataScope string
+	DataScope         string
+	ConnectivityScope string
 }
 
 // IPAMData represents the per-network ip related
@@ -123,4 +173,41 @@ type IPAMData struct {
 	Pool         *net.IPNet
 	Gateway      *net.IPNet
 	AuxAddresses map[string]*net.IPNet
+}
+
+// EventType defines a type for the CRUD event
+type EventType uint8
+
+const (
+	// Create event is generated when a table entry is created,
+	Create EventType = 1 + iota
+	// Update event is generated when a table entry is updated.
+	Update
+	// Delete event is generated when a table entry is deleted.
+	Delete
+)
+
+// ObjectType represents the type of object driver wants to store in libnetwork's networkDB
+type ObjectType int
+
+const (
+	// EndpointObject should be set for libnetwork endpoint object related data
+	EndpointObject ObjectType = 1 + iota
+	// NetworkObject should be set for libnetwork network object related data
+	NetworkObject
+	// OpaqueObject is for driver specific data with no corresponding libnetwork object
+	OpaqueObject
+)
+
+// IsValidType validates the passed in type against the valid object types
+func IsValidType(objType ObjectType) bool {
+	switch objType {
+	case EndpointObject:
+		fallthrough
+	case NetworkObject:
+		fallthrough
+	case OpaqueObject:
+		return true
+	}
+	return false
 }

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/libnetwork/iptables"
 	"github.com/docker/libnetwork/netutils"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -154,11 +154,7 @@ func (ic *iptablesConfig) setupIPTablesInternal(enable bool) error {
 	}
 
 	// Set Accept on incoming packets for existing connections.
-	if err := programChainRule(inRule, "ACCEPT INCOMING", enable); err != nil {
-		return err
-	}
-
-	return nil
+	return programChainRule(inRule, "ACCEPT INCOMING", enable)
 }
 
 func programChainRule(rule iptRule, ruleDescr string, enable bool) error {

@@ -8,9 +8,9 @@ import (
 )
 
 var (
-	errOnlySupportedOnLinuxAndFreeBSD = errors.New("unix socket creation is only supported on linux and freebsd")
+	errOnlySupportedOnLinuxAndFreeBSD = errors.New("unix socket creation is only supported on Linux and FreeBSD")
 )
 
-func newUnixListener(pluginName string, group string) (net.Listener, string, error) {
+func newUnixListener(pluginName string, gid int) (net.Listener, string, error) {
 	return nil, "", errOnlySupportedOnLinuxAndFreeBSD
 }

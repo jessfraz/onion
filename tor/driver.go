@@ -5,13 +5,13 @@ import (
 	"net"
 	"sync"
 
-	"github.com/Sirupsen/logrus"
-	"github.com/docker/engine-api/client"
+	"github.com/docker/docker/client"
 	"github.com/docker/go-plugins-helpers/network"
 	"github.com/docker/libnetwork/driverapi"
 	"github.com/docker/libnetwork/iptables"
 	"github.com/docker/libnetwork/portmapper"
 	"github.com/docker/libnetwork/types"
+	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 )
 
@@ -118,7 +118,7 @@ func (d *Driver) CreateNetwork(r *network.CreateNetworkRequest) error {
 		Gateway:     gateway,
 		GatewayMask: mask,
 		endpoints:   map[string]*torEndpoint{},
-		portMapper:  portmapper.New(),
+		portMapper:  portmapper.New(""),
 		blockUDP:    true, // TODO: this should be configurable
 	}
 	d.networks[r.NetworkID] = ns
@@ -284,11 +284,7 @@ func (d *Driver) DeleteEndpoint(r *network.DeleteEndpointRequest) error {
 	}()
 
 	// Remove port mappings. Do not stop endpoint delete on unmap failure
-	if err := ns.releasePorts(ep); err != nil {
-		return err
-	}
-
-	return nil
+	return ns.releasePorts(ep)
 }
 
 // EndpointInfo returns information about an endpoint.

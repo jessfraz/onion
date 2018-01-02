@@ -8,8 +8,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/go-plugins-helpers/network"
+	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 )
 

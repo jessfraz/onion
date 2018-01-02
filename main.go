@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/pidfile"
 	"github.com/docker/go-plugins-helpers/network"
 	"github.com/jessfraz/onion/tor"
 	"github.com/jessfraz/onion/version"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -82,7 +82,7 @@ func main() {
 		logrus.Fatal(err)
 	}
 	h := network.NewHandler(d)
-	h.ServeUnix("root", "tor")
+	h.ServeUnix("tor", 0)
 }
 
 func usageAndExit(message string, exitCode int) {
