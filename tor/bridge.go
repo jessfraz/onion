@@ -26,7 +26,7 @@ func (n *NetworkState) initBridge(torIP string) error {
 	la := netlink.NewLinkAttrs()
 	la.Name = bridgeName
 	la.MTU = n.MTU
-	br := &netlink.Bridge{la}
+	br := &netlink.Bridge{LinkAttrs: la}
 	if err := netlink.LinkAdd(br); err != nil {
 		return fmt.Errorf("Bridge creation failed for bridge %s: %v", bridgeName, err)
 	}
